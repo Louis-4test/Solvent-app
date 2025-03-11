@@ -1,0 +1,99 @@
+-- Table: Users
+CREATE TABLE Users (
+    UserID INT AUTO_INCREMENT PRIMARY KEY,
+    FirstName VARCHAR(50) NOT NULL,
+    LastName VARCHAR(50) NOT NULL,
+    Email VARCHAR(100) UNIQUE NOT NULL,
+    PhoneNumber VARCHAR(20) UNIQUE NOT NULL,
+    UserType ENUM('Individual', 'Business') NOT NULL,
+    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Table: Banks
+CREATE TABLE Banks (
+    BankID INT AUTO_INCREMENT PRIMARY KEY,
+    BankName VARCHAR(100) NOT NULL,
+    BankCode VARCHAR(20) UNIQUE NOT NULL,
+    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Table: MobileMoneyProviders
+CREATE TABLE MobileMoneyProviders (
+    ProviderID INT AUTO_INCREMENT PRIMARY KEY,
+    ProviderName VARCHAR(100) NOT NULL,
+    ProviderCode VARCHAR(20) UNIQUE NOT NULL,
+    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Table: Currencies
+CREATE TABLE Currencies (
+    CurrencyID INT AUTO_INCREMENT PRIMARY KEY,
+    CurrencyCode CHAR(3) UNIQUE NOT NULL,
+    CurrencyName VARCHAR(50) NOT NULL
+);
+
+-- Table: Wallets
+CREATE TABLE Wallets (
+    WalletID INT AUTO_INCREMENT PRIMARY KEY,
+    UserID INT NOT NULL,
+    CurrencyID INT NOT NULL,
+    Balance DECIMAL(15, 2) DEFAULT 0.00,
+    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (UserID) REFERENCES Users(UserID),
+    FOREIGN KEY (CurrencyID) REFERENCES Currencies(CurrencyID)
+);
+
+-- Table: Accounts
+CREATE TABLE Accounts (
+    AccountID INT AUTO_INCREMENT PRIMARY KEY,
+    UserID INT NOT NULL,
+    AccountType ENUM('Bank', 'MobileMoney') NOT NULL,
+    BankID INT,
+    ProviderID INT,
+    AccountNumber VARCHAR(50) NOT NULL,
+    CurrencyID INT NOT NULL,
+    Balance DECIMAL(15, 2) DEFAULT 0.00,
+    CreatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (UserID) REFERENCES Users(UserID),
+    FOREIGN KEY (BankID) REFERENCES Banks(BankID),
+    FOREIGN KEY (ProviderID) REFERENCES MobileMoneyProviders(ProviderID),
+    FOREIGN KEY (CurrencyID) REFERENCES Currencies(CurrencyID)
+);
+
+-- Table: TransactionTypes
+CREATE TABLE TransactionTypes (
+    TransactionTypeID INT AUTO_INCREMENT PRIMARY KEY,
+    TypeName VARCHAR(50) NOT NULL
+);
+
+-- Table: Transactions
+CREATE TABLE Transactions (
+    TransactionID INT AUTO_INCREMENT PRIMARY KEY,
+    SenderWalletID INT,
+    ReceiverWalletID INT,
+    SenderAccountID INT,
+    ReceiverAccountID INT,
+    Amount DECIMAL(15, 2) NOT NULL,
+    CurrencyID INT NOT NULL,
+    TransactionTypeID INT NOT NULL,
+    TransactionDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    Status ENUM('Pending', 'Completed', 'Failed') DEFAULT 'Pending',
+    FOREIGN KEY (SenderWalletID) REFERENCES Wallets(WalletID),
+    FOREIGN KEY (ReceiverWalletID) REFERENCES Wallets(WalletID),
+    FOREIGN KEY (SenderAccountID) REFERENCES Accounts(AccountID),
+    FOREIGN KEY (ReceiverAccountID) REFERENCES Accounts(AccountID),
+    FOREIGN KEY (CurrencyID) REFERENCES Currencies(CurrencyID),
+    FOREIGN KEY (TransactionTypeID) REFERENCES TransactionTypes(TransactionTypeID)
+);
+
+-- Table: AuditLogs (Optional for tracking changes)
+CREATE TABLE AuditLogs (
+    LogID INT AUTO_INCREMENT PRIMARY KEY,
+    UserID INT,
+    Action VARCHAR(100) NOT NULL,
+    Timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (UserID) REFERENCES Users(UserID)
+);
