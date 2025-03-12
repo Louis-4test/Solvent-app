@@ -1,41 +1,26 @@
-// ForgotPassword.jsx
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import authAPI from './path-to-authAPI';  // Adjust the path as necessary
+
 export default function ForgotPassword() {
-    const [email, setEmail] = useState('');
+  const navigate = useNavigate();  // ✅ Ensure it's here
+
+  const [email, setEmail] = useState("");
   
-    const handleSubmit = async () => {
-      await authAPI.forgotPassword(email);
-      alert('Password reset instructions sent to your email');
-    };
-  
-    return (
-      <div>
-        <TextField
-          label="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <Button onClick={handleSubmit}>Reset Password</Button>
-      </div>
-    );
-  }
-  
-  // Reset Password Component
-  const ResetPassword = ({ token }) => {
-    const [newPassword, setNewPassword] = useState('');
-  
-    const handleSubmit = async () => {
-      await authAPI.resetPassword(token, newPassword);
-      navigate('/login');
-    };
-  
-    return (
-      <div>
-        <TextField
-          type="password"
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-        />
-        <Button onClick={handleSubmit}>Set New Password</Button>
-      </div>
-    );
+  const handleSubmit = async () => {
+    await authAPI.forgotPassword(email);
+    alert("Password reset instructions sent to your email");
+    navigate("/login");  // ✅ Use navigate properly
   };
+
+  return (
+    <div>
+      <TextField
+        label="Email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
+      <Button onClick={handleSubmit}>Reset Password</Button>
+    </div>
+  );
+}

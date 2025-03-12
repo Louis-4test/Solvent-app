@@ -8,7 +8,6 @@ export default {
   sendMFACode: (email) => API.post('/auth/mfa/send', { email }),
   // Add other auth methods
   verifyMFA: (code) => API.post('/auth/mfa/verify', { code }),
-  sendMFACode: () => API.post('/auth/mfa/resend'),
   login: (credentials) => API.post('/auth/login', credentials),
   forgotPassword: (email) => API.post('/auth/forgot-password', { email }),
   resetPassword: (token, newPassword) => API.post('/auth/reset-password', { token, newPassword }),
