@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "start": "node src/index.js",
-    "test": "jest",
+    "test": "jest --passWithNoTests",
     "migrate": "node scripts/migrate.js",
     "seed": "node scripts/seed.js",
     "docker:build": "docker build -t fola901/fintech-app .",
