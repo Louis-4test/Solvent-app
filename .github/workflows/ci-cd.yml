@@ -60,13 +60,7 @@ jobs:
       - name: Run npm audit
         run: npm audit
 
-      # Optional: Add Snyk for advanced security scanning
-      - name: Run Snyk security scan
-        uses: snyk/actions/node@v3
-        with:
-          command: monitor
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      
 
   build-and-push-docker-image:
     runs-on: ubuntu-latest
