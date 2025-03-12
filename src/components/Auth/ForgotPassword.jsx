@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import authAPI from './path-to-authAPI';  // Adjust the path as necessary
+import authAPI from './path-to-authAPI';  
 
 export default function ForgotPassword() {
-  const navigate = useNavigate();  // ✅ Ensure it's here
+  const navigate = useNavigate();  
 
   const [email, setEmail] = useState("");
   
