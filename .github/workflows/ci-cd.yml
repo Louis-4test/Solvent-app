@@ -97,9 +97,11 @@ jobs:
 
       - name: Decode kubeconfig and configure Kubernetes context
         run: |
+          mkdir -p $HOME/.kube
           echo "${{ secrets.KUBE_CONFIG }}" | base64 --decode > $HOME/.kube/config
           chmod 600 $HOME/.kube/config
-          kubectl config use-context my-cluster  # Change to your actual cluster name
+          kubectl config get-contexts
+
 
       - name: Deploy to Kubernetes
         env:
