@@ -115,7 +115,7 @@ jobs:
 
       - name: Deploy to Kubernetes
         env:
-          IMAGE_NAME: fola901/fintech-app
+          IMAGE_NAME: fintech-app
         run: |
           kubectl apply -f kubernetes/deployment.yaml
           kubectl apply -f kubernetes/service.yaml
