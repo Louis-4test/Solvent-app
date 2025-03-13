@@ -14,7 +14,8 @@ spec:
     spec:
       containers:
         - name: fintech-app
-          image: fola901/fintech-app:latest
+          image: fola901/solvent-app:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 3000
           env:
