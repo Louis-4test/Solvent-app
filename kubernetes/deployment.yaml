@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: fintech-app
 spec:
-  replicas: 3
+  replicas: 60
   selector:
     matchLabels:
       app: fintech-app
