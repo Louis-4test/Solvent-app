@@ -119,5 +119,5 @@ jobs:
         run: |
           kubectl apply -f kubernetes/deployment.yaml
           kubectl apply -f kubernetes/service.yaml
-          kubectl set image deployment/fintech-app my-container=$IMAGE_NAME:${{ github.sha }}
+          kubectl set image deployment/fintech-app fintech-app=$IMAGE_NAME:${{ github.sha }}
           kubectl rollout status deployment/fintech-app
