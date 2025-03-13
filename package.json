@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "node src/index.js",
+    "start": "node src/main.jsx",
     "test": "jest --passWithNoTests",
     "migrate": "node scripts/migrate.js",
     "seed": "node scripts/seed.js",
