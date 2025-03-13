@@ -10,7 +10,7 @@ export default function ForgotPassword() {
   const handleSubmit = async () => {
     await authAPI.forgotPassword(email);
     alert("Password reset instructions sent to your email");
-    navigate("/login");  // ✅ Use navigate properly
+    navigate("/login");  
   };
 
   return (
