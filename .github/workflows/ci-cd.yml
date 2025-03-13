@@ -95,13 +95,18 @@ jobs:
       - name: Install kubectl
         uses: azure/setup-kubectl@v3
 
-      - name: Decode kubeconfig and configure Kubernetes context
+      - name: Start Minikube
+        run: |
+          sudo minikube start --driver=docker
+          minikube update-context
+
+      - name: Setup kubeconfig for Minikube
         run: |
           mkdir -p $HOME/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" | base64 --decode > $HOME/.kube/config
-          chmod 600 $HOME/.kube/config
-          kubectl config get-contexts
-
+          minikube update-context
+          cp -r $HOME/.minikube $HOME/.kube/
+          export KUBECONFIG=$HOME/.kube/config
+          kubectl config use-context minikube
 
       - name: Deploy to Kubernetes
         env:
