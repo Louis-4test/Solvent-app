@@ -104,8 +104,7 @@ jobs:
         run: |
           minikube start --driver=docker --force
           minikube update-context
-          minikube status 
-
+          minikube status  
       - name: Setup kubeconfig for Minikube
         run: |
           mkdir -p $HOME/.kube
@@ -126,7 +125,19 @@ jobs:
           kubectl apply -f kubernetes/service.yaml
           kubectl set image deployment/fintech-app fintech-app=$IMAGE_NAME:${{ github.sha }}
           kubectl rollout status deployment/fintech-app
+          
+      - name: Get pods status
+        run: |
+          kubectl get pods  
 
+      - name: Describe the deployment and pods
+        run: |
+          kubectl describe deployment fintech-app  
+          kubectl describe pod $(kubectl get pods -o=jsonpath='{.items[0].metadata.name}')  
+
+      - name: Get logs for the fintech-app container
+        run: |
+          kubectl logs $(kubectl get pods -o=jsonpath='{.items[0].metadata.name}') -c fintech-app  
       - name: Check Minikube resources
         run: |
-          minikube ssh "free -h"
+          minikube ssh "free -h"  
