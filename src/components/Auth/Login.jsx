@@ -1,17 +1,17 @@
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
-import authAPI from "../../services/authAPI";
-
+import { Button, TextField, Typography, Box } from '@mui/material';
+import authAPI from '../../services/authAPI';
 
 export default function Login() {
-  const { register, handleSubmit } = useForm();
+  const { register, handleSubmit, formState: { errors } } = useForm();
   const navigate = useNavigate();
 
   const onSubmit = async (data) => {
     try {
       const response = await authAPI.login(data);
       
-      if(response.mfaRequired) {
+      if (response.mfaRequired) {
         navigate('/verify-mfa');
       } else {
         navigate('/dashboard');
@@ -22,33 +22,74 @@ export default function Login() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)}>
-      <Typography variant="h4">LOGIN</Typography>
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh', // Full viewport height
+        width: '100vw', // Full viewport width
+        bgcolor: 'background.default',
+      }}
+    >
+      <Box
+        sx={{
+          maxWidth: 400, // Ensures form doesn't stretch too much
+          width: '90%', // Responsive width
+          p: 4,
+          boxShadow: 3,
+          borderRadius: 2,
+          bgcolor: 'background.paper',
+        }}
+      >
+        <Typography variant="h4" sx={{ mb: 3, textAlign: 'center', fontWeight: 'bold' }}>
+          Login
+        </Typography>
 
-      <TextField
-        label="Email/Phone Number"
-        {...register('identifier', { required: true })}
-        fullWidth
-      />
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <TextField
+            label="Email/Phone Number"
+            {...register('identifier', { required: 'Email/Phone is required' })}
+            error={!!errors.identifier}
+            helperText={errors.identifier?.message}
+            fullWidth
+            sx={{ mb: 2 }}
+          />
 
-      <TextField
-        label="Password"
-        type="password"
-        {...register('password', { required: true })}
-        fullWidth
-      />
+          <TextField
+            label="Password"
+            type="password"
+            {...register('password', { required: 'Password is required' })}
+            error={!!errors.password}
+            helperText={errors.password?.message}
+            fullWidth
+            sx={{ mb: 3 }}
+          />
 
-      <Button onClick={() => navigate('/forgot-password')}>
-        Forgot password? Click here
-      </Button>
+          <Box sx={{ textAlign: 'right', mb: 2 }}>
+            <Button onClick={() => navigate('/forgot-password')} sx={{ textTransform: 'none' }}>
+              Forgot password?
+            </Button>
+          </Box>
 
-      <Button type="submit" variant="contained" color="primary">
-        Login
-      </Button>
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            fullWidth
+            sx={{ py: 1.5, mb: 2 }}
+          >
+            Login
+          </Button>
 
-      <Typography>
-        Don’t have an account? <Button onClick={() => navigate('/register')}>Register here</Button>
-      </Typography>
-    </form>
+          <Typography variant="body2" sx={{ textAlign: 'center' }}>
+            Don’t have an account?{' '}
+            <Button onClick={() => navigate('/register')} sx={{ textTransform: 'none' }}>
+              Register here
+            </Button>
+          </Typography>
+        </form>
+      </Box>
+    </Box>
   );
 }
