@@ -1,0 +1,36 @@
+/* Transfer.css */
+.transfer-container {
+    padding: 20px;
+    background-color: #f3f4f6;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .transfer-card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 400px;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+  }
+  
+  .transfer-card input,
+  .transfer-card select {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+  }
+  
+  .transfer-button {
+    width: 100%;
+    background: #1e293b;
+    color: white;
+    padding: 12px;
+    border-radius: 6px;
+    margin-top: 10px;
+  }
+  
