@@ -1,0 +1,243 @@
+/* Transactions.css */
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #EDF2F7;
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  .container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+  }
+  
+  /* Sidebar */
+  .sidebar {
+    width: 250px;
+    background: #0a1931;
+    color: white;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .sidebar h2 {
+    margin-bottom: 20px;
+  }
+  
+  .nav-links a {
+    display: block;
+    color: white;
+    text-decoration: none;
+    padding: 10px;
+    border-radius: 6px;
+    margin: 5px 0;
+  }
+  
+  .nav-links a.active, .nav-links a:hover {
+    background: #007bff;
+  }
+  
+  /* Main Content */
+  .main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    overflow-y: auto;
+  }
+  
+  /* Top Navbar */
+  .navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+  }
+  
+  .user-info {
+    display: flex;
+    align-items: center;
+  }
+  
+  .user-info img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-left: 10px;
+  }
+   .card {
+    width: 50px;
+    height: 50px;
+   }
+  /* Account Balances */
+  .account-balance {
+    font-size: 24px;
+    font-weight: bold;
+  }
+  
+  .wallet-balance {
+    font-size: 18px;
+    font-weight: bold;
+    color: #555;
+    margin-bottom: 20px;
+  }
+  
+  .trans{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 20px;
+  }
+  /* Layout: Send Money Form & Transactions */
+  .content-wrapper {
+    display: flex;
+    gap: 20px;
+    flex: 1;
+  }
+  
+  /* Send Money Form */
+  .send-money-form {
+    width: 40%;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .send-money-form h3 {
+    margin-bottom: 15px;
+  }
+  
+  .send-money-form label {
+    display: block;
+    margin: 10px 0 5px;
+  }
+  
+  .send-money-form input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+  }
+  
+  .send-money-form button {
+    width: 100%;
+    padding: 10px;
+    background: #070C90;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  /* Transactions Section */
+  .transactions-container {
+    flex: 1;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .transactions-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 10px;
+  }
+  
+  .transactions-header h2 {
+    font-size: 24px;
+    font-weight: bold;
+  }
+  
+  .export-csv {
+    text-decoration: none;
+    color: #070C90;
+    font-weight: bold;
+  }
+  
+  /* Transactions Tabs */
+  .transactions-tabs {
+    display: flex;
+    border-bottom: 2px solid #ddd;
+    margin-bottom: 10px;
+  }
+  
+  .transactions-tabs span {
+    padding: 10px 15px;
+    cursor: pointer;
+    color: #777;
+  }
+  
+  .active-tab {
+    border-bottom: 2px solid #007bff;
+    font-weight: bold;
+    color: #000;
+  }
+  
+  /* Transactions List */
+  .transactions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .transaction-item {
+    display: flex;
+    align-items: center;
+    background: #fff;
+    padding: 15px;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .transaction-icon {
+    font-size: 24px;
+    margin-right: 10px;
+  }
+  
+  .transaction-details {
+    flex: 1;
+  }
+  
+  .transaction-name {
+    font-weight: bold;
+  }
+  
+  .transaction-time {
+    font-size: 14px;
+    color: #777;
+  }
+  
+  .transaction-id, .transaction-amount {
+    margin-left: 15px;
+    font-weight: bold;
+  }
+  
+  .transaction-status {
+    margin-left: auto;
+    font-weight: bold;
+  }
+  
+  .pending {
+    color: orange;
+  }
+  
+  .approved {
+    color: green;
+  }
+  
+  .declined {
+    color: red;
+  }
+  
