@@ -21,7 +21,8 @@ const Dashboard = () => {
           <Link to="/">🏠 Home</Link>
           <Link to="/transactions">📜 Transactions</Link>
           <Link to="/transfer/bank-to-momo">💳 Fund Transfer</Link>
-          <Link to="/bill-payment">📑 Bill Payment</Link>
+          <Link to="/payment/billPayment">📑 Bill Payment</Link>
+          <Link to="/payment/merchantPayment">📑 Merchant Payment</Link>
           <Link to="/notifications">🔔 Notifications</Link>
           <Link to="/settings">⚙️ Settings</Link>
           <Link to="/logout" className="logout">🚪 Logout</Link>
