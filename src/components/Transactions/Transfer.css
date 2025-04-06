@@ -54,19 +54,25 @@
   margin-right: 10px;
 }
 
+
 .transfer-container {
   display: flex;
   justify-content: space-between;
 }
 
 .transfer-card {
-  width: 60%;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 20px;
 }
 
 .transfer-form {
-  background-color: #f5f5f5;
+  width: 600px;
+  background: white;
   padding: 20px;
   border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .form-tabs {
@@ -91,20 +97,22 @@ label {
 }
 
 input {
-  width: 100%;
-  padding: 10px;
+  width: 95%;
+  padding: 12px;
   margin-bottom: 20px;
-  border-radius: 5px;
+  border-radius: 8px;
   border: 1px solid #ddd;
 }
 
-button {
+/* Adjust the button to match others */
+.transfer-button {
+  width: 150px;
   padding: 10px 20px;
   border: none;
-  background-color: #3498db;
+  background-color: #070C90;
   color: white;
   cursor: pointer;
-  border-radius: 5px;
+  border-radius: 12px;
 }
 
 button:hover {
@@ -117,29 +125,16 @@ button:hover {
 }
 
 .side-actions {
-  width: 30%;
+  width: 280px;
+  background: white;
   padding: 20px;
-  background-color: #ecf0f1;
   border-radius: 8px;
-}
-
-.box {
-  margin-bottom: 20px;
-}
-
-.box h4 {
-  margin-bottom: 10px;
-}
-
-.box button {
-  width: 100%;
-  margin-bottom: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 textarea {
-  width: 100%;
+  width: 90%;
   padding: 10px;
-  margin-bottom: 10px;
-  border-radius: 5px;
+  border-radius: 12px;
   border: 1px solid #ddd;
 }

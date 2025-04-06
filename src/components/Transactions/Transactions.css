@@ -130,12 +130,12 @@ body {
   }
   
   .send-money-form button {
-    width: 100%;
+    width: 150px;
     padding: 10px;
     background: #070C90;
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 12px;
     cursor: pointer;
   }
   
@@ -220,7 +220,7 @@ body {
   }
   
   .transaction-id, .transaction-amount {
-    margin-left: 15px;
+    margin-left: 16px;
     font-weight: bold;
   }
   
@@ -230,14 +230,17 @@ body {
   }
   
   .pending {
+    margin-left: 16px;
     color: orange;
   }
   
   .approved {
+    margin-left: 16px;
     color: green;
   }
   
   .declined {
+    margin-left: 16px;
     color: red;
   }
   

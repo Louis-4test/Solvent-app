@@ -21,7 +21,7 @@ const Dashboard = () => {
           <Link to="/">🏠 Home</Link>
           <Link to="/transactions">📜 Transactions</Link>
           <Link to="/transfer/bank-to-momo">💳 Fund Transfer</Link>
-          <Link to="/payment/billPayment">📑 Bill Payment</Link>
+          <Link to="/billPayment">📑 Bill Payment</Link>
           <Link to="/payment/merchantPayment">📑 Merchant Payment</Link>
           <Link to="/notifications">🔔 Notifications</Link>
           <Link to="/settings">⚙️ Settings</Link>
@@ -117,8 +117,12 @@ const Dashboard = () => {
 
               <div className="quick-actions">
                 <h3 className="quick-actions-title">Quick Actions</h3>
-                <button>Add Money</button>
-                <button>Pay Bill</button>
+                <Link to="/transfer/airtime">
+                  <button>Buy Airtime</button>
+                </Link>
+                <Link to="./payment/BillPayment">
+                  <button>Pay Bill</button>
+                </Link>
               </div>
 
               <div className="quick-actions">

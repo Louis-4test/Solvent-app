@@ -26,7 +26,7 @@ function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/transactions" element={<Transactions />} /> {/* Add this route */}
         <Route path="/transfer/:type" element={<Transfer />} />
-        <Route path="/bill-payment" element={<BillPayment />} />
+        <Route path="/billpayment" element={<BillPayment />} />
         <Route path="/merchant-payment" element={<MerchantPayment />} />
       </Routes>
     </Router>

@@ -11,7 +11,7 @@ const BillPayment = () => {
         <div className="nav-links">
           <Link to="/">🏠 Home</Link>
           <Link to="/transactions">💳 Transactions</Link>
-          <Link to="/fund-transfer">💰 Fund Transfer</Link>
+          <Link to="/./transfer/bank-to-momo">💰 Fund Transfer</Link>
           <Link to="/bill-payment" className="active">📄 Bill Payment</Link>
           <Link to="/merchant-payment">🏪 Merchant Payment</Link>
           <Link to="/notifications">🔔 Notifications</Link>

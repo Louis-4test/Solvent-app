@@ -18,9 +18,9 @@ const Transfer = () => {
         <h2>SOLVENT</h2>
         <div className="nav-links">
           <Link to="/">🏠 Home</Link>
-          <Link to="/transactions">💳 Transactions</Link>
+          <Link to="/./transactions">💳 Transactions</Link>
           <Link to="/fund-transfer" className="active">💰 Fund Transfer</Link>
-          <Link to="/bill-payment">📄 Bill Payment</Link>
+          <Link to="/billPayment">📄 Bill Payment</Link>
           <Link to="/merchant-payment">🏪 Merchant Payment</Link>
           <Link to="/notifications">🔔 Notifications</Link>
           <Link to="/settings">⚙️ Settings</Link>
@@ -44,12 +44,16 @@ const Transfer = () => {
           <div className="transfer-card">
             <div className="transfer-form">
               <div className="form-tabs">
-                <span className="active-tab">Fund Transfer</span>
-                <span>Merchant Pay</span>
+                <Link to="/transfer/bank-to-momo">
+                  <button>Fund Transfer</button>
+                </Link>
+                <Link to="./payment/MerchantPayment">
+                  <button>Merchant Pay</button>
+                </Link>
               </div>
 
               <label>Transfer Type</label>
-              <select value={type} disabled>
+              <select value={type} enable>
                 <option value="bank-to-momo">Bank to Momo</option>
                 <option value="momo-to-bank">Momo to Bank</option>
               </select>
@@ -74,21 +78,30 @@ const Transfer = () => {
 
             {/* Right Side Actions */}
             <div className="side-actions">
-              <div className="box">
-                <h4>Transfer</h4>
-                <button>Bank to Momo</button>
-                <button>Momo to Bank</button>
+              <div className="quick-actions">
+                <h3 className="quick-actions-title">Transfer</h3>
+                <Link to="/transfer/bank-to-momo">
+                  <button>Bank to Momo</button>
+                </Link>
+                <Link to="/transfer/momo-to-bank">
+                  <button>Momo to Bank</button>
+                </Link>
               </div>
 
-              <div className="box">
-                <button>Buy Airtime</button>
-                <button>Pay Bill</button>
+              <div className="quick-actions">
+                <h3 className="quick-actions-title">Quick Actions</h3>
+                <Link to="/transfer/airtime">
+                  <button>Buy Airtime</button>
+                </Link>
+                <Link to="./payment/BillPayment">
+                  <button>Pay Bill</button>
+                </Link>
               </div>
 
-              <div className="box">
-                <p>Review:</p>
-                <textarea placeholder="Write your review..." rows="3"></textarea>
-                <p>Rate: ⭐⭐⭐☆☆</p>
+              <div className="quick-actions">
+                <p className="quick-actions-title">Review:</p>
+                <textarea placeholder="Write your review..." rows="5"></textarea>
+                <p className="quick-actions-title">Rate: ⭐⭐⭐☆☆</p>
               </div>
             </div>
           </div>

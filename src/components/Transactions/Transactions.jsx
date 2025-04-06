@@ -19,8 +19,8 @@ const Transactions = () => {
         <div className="nav-links">
           <Link to="/">🏠 Home</Link>
           <Link to="/transactions" className="active">💳 Transactions</Link>
-          <Link to="/fund-transfer">💰 Fund Transfer</Link>
-          <Link to="/bill-payment">📄 Bill Payment</Link>
+          <Link to="/./transfer/bank-to-momo">💰 Fund Transfer</Link>
+          <Link to="/../billPayment">📄 Bill Payment</Link>
           <Link to="/merchant-payment">🏪 Merchant Payment</Link>
           <Link to="/notifications">🔔 Notifications</Link>
           <Link to="/settings">⚙️ Settings</Link>
@@ -43,7 +43,7 @@ const Transactions = () => {
         <div className="account-balance">XAF 230,000</div>
         <div className="wallet-balance">Wallet Balance: XAF 78,500</div>
 
-        <div className="trans">
+          <div className="trans">
             {/* Send Money Form */}
             <div className="send-money-form">
             <h3>Send Money</h3>
@@ -66,21 +66,21 @@ const Transactions = () => {
                 <span>Standing Order</span>
             </div>
 
-            <div className="transactions-list">
-                {transactions.map((transaction) => (
-                <div key={transaction.id} className="transaction-item">
-                    <span className="transaction-icon">⬇️</span>
-                    <div className="transaction-details">
-                    <div className="transaction-name">{transaction.name}</div>
-                    <div className="transaction-time">{transaction.time}</div>
+              <div className="transactions-list">
+                  {transactions.map((transaction) => (
+                    <div key={transaction.id} className="transaction-item">
+                        <span className="transaction-icon">⬇️</span>
+                        <div className="transaction-details">
+                        <div className="transaction-name">{transaction.name}</div>
+                        <div className="transaction-time">{transaction.time}</div>
+                        </div>
+                        <div className="transaction-id">ID {transaction.transactionId}</div>
+                        <div className="transaction-amount">{transaction.amount}</div>
+                        <div className={`transaction-status ${transaction.status.toLowerCase()}`}>{transaction.status}</div>
                     </div>
-                    <div className="transaction-id">ID {transaction.transactionId}</div>
-                    <div className="transaction-amount">{transaction.amount}</div>
-                    <div className={`transaction-status ${transaction.status.toLowerCase()}`}>{transaction.status}</div>
-                </div>
-                ))}
-            </div>
-            </div>
+                  ))}
+              </div>
+          </div>
         </div>
       </div>
     </div>
