@@ -74,6 +74,42 @@ const Transfer = () => {
                   Transfer
                 </button>
               </div>
+
+              {/* Recent Transactions */}
+              <div className="recent-transactions">
+                <h2 className="transactions-title">Recent Transactions</h2>
+                <table className="transactions-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Date</th>
+                      <th>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Mobile Money</td>
+                      <td>Food</td>
+                      <td>March 08, 2025</td>
+                      <td>XAF 6500</td>
+                    </tr>
+                    <tr>
+                      <td>Bank Transfer</td>
+                      <td>Bank to Momo</td>
+                      <td>March 07, 2025</td>
+                      <td>XAF 45000</td>
+                    </tr>
+                    <tr>
+                      <td>Bill Payment</td>
+                      <td>Electric Bill</td>
+                      <td>March 04, 2025</td>
+                      <td>XAF 23000</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
             </div>
 
             {/* Right Side Actions */}
