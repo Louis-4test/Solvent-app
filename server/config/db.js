@@ -1,33 +1,44 @@
-const { Sequelize } = require('sequelize');
+import { Sequelize } from 'sequelize';
+import dotenv from 'dotenv';
 
-const sequelize = new Sequelize('solvent_fintech', 'root', '', {
-  host: 'localhost',
-  dialect: 'mysql',
-  port: 3306, // Default MySQL port for XAMPP
-  dialectOptions: {
-    socketPath: '/opt/lampp/var/mysql/mysql.sock' // Standard XAMPP path on Linux
-  },
-  pool: {
-    max: 5,
-    min: 0,
-    acquire: 30000,
-    idle: 10000
-  },
-  define: {
-    timestamps: true, // Adds createdAt/updatedAt fields
-    freezeTableName: true // Prevents pluralization
-  },
-  logging: process.env.NODE_ENV === 'development' ? console.log : false
-});
+dotenv.config();
 
-// Test the connection
+const sequelize = new Sequelize(
+  process.env.DB_NAME,
+  process.env.DB_USER,
+  process.env.DB_PASSWORD,
+  {
+    host: process.env.DB_HOST,
+    dialect: 'mysql',
+    port: process.env.DB_PORT || 3306,
+    logging: false, // Disable logging in production
+    define: {
+      timestamps: true,
+      underscored: true,
+      freezeTableName: true
+    },
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000
+    }
+  }
+);
+
+// Test connection only once
 (async () => {
   try {
     await sequelize.authenticate();
-    console.log('MySQL connection established via XAMPP');
+    console.log('✅ Database connection established successfully');
+    
+    // Sync models with existing database
+    await sequelize.sync({ alter: true });
+    console.log('✅ Database models synchronized');
   } catch (error) {
-    console.error('Unable to connect to MySQL:', error);
+    console.error('❌ Database connection failed:', error);
+    process.exit(1);
   }
 })();
 
-module.exports = sequelize;
+export default sequelize;

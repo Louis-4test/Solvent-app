@@ -1,29 +1,29 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/db');
-const bcrypt = require('bcryptjs');
+import { DataTypes } from 'sequelize';
+import sequelize from '../config/db.js';
 
 const User = sequelize.define('User', {
+  id: {
+    type: DataTypes.INTEGER,
+    autoIncrement: true,
+    primaryKey: true
+  },
   email: {
     type: DataTypes.STRING,
-    allowNull: false,
-    unique: true
+    unique: true,
+    allowNull: false
   },
   password: {
     type: DataTypes.STRING,
-    allowNull: false,
-    set(value) {
-      const salt = bcrypt.genSaltSync(10);
-      const hash = bcrypt.hashSync(value, salt);
-      this.setDataValue('password', hash);
-    }
+    allowNull: false
   },
-  phone: {
-    type: DataTypes.STRING
-  },
+  phone: DataTypes.STRING,
   isVerified: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
   }
+}, {
+  tableName: 'Users',
+  timestamps: true
 });
 
-module.exports = User;
+export default User;

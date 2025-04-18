@@ -1,49 +1,63 @@
-module.exports = (sequelize, DataTypes) => {
-    const Transaction = sequelize.define('Transaction', {
-      id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
-      },
-      amount: {
-        type: DataTypes.DECIMAL(15, 2),
-        allowNull: false
-      },
-      type: {
-        type: DataTypes.ENUM(
-          'transfer',
-          'deposit',
-          'withdrawal',
-          'bill_payment'
-        ),
-        allowNull: false
-      },
-      status: {
-        type: DataTypes.ENUM(
-          'pending',
-          'completed',
-          'failed'
-        ),
-        defaultValue: 'pending'
-      },
-      reference: {
-        type: DataTypes.STRING,
-        unique: true
-      }
-    }, {
-      indexes: [
-        {
-          fields: ['userId']
-        },
-        {
-          fields: ['createdAt']
-        }
-      ]
-    });
-  
-    Transaction.associate = models => {
-      Transaction.belongsTo(models.User, { foreignKey: 'userId' });
-    };
-  
-    return Transaction;
-  };
+import { DataTypes } from 'sequelize';
+import sequelize from '../config/db.js';
+
+const Transaction = sequelize.define('Transaction', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  sender_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'Users',
+      key: 'id'
+    }
+  },
+  recipient_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'Users',
+      key: 'id'
+    }
+  },
+  amount: {
+    type: DataTypes.DECIMAL(12, 2),
+    allowNull: false
+  },
+  narration: {
+    type: DataTypes.STRING,
+    defaultValue: 'Fund transfer'
+  },
+  status: {
+    type: DataTypes.ENUM(
+      'pending',
+      'completed',
+      'failed',
+      'reversed'
+    ),
+    defaultValue: 'pending'
+  },
+  type: {
+    type: DataTypes.ENUM(
+      'transfer',
+      'deposit',
+      'withdrawal',
+      'payment'
+    ),
+    allowNull: false
+  },
+  reference: {
+    type: DataTypes.STRING,
+    unique: true
+  }
+}, {
+  tableName: 'transactions',
+  timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at'
+});
+
+export default Transaction;
