@@ -10,7 +10,7 @@ const Transactions = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch transactions from backend
+  // Fetch transactions from backend and db
   useEffect(() => {
     const fetchTransactions = async () => {
       try {

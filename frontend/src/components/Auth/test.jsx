@@ -16,7 +16,7 @@ export default function Register() {
       setLoading(true);
       setError('');
   
-      // Step 1: Register user
+      
       const registerResponse = await authAPI.register(data);
       
       // Step 2: Upload KYC document
