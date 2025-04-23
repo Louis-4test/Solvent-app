@@ -1,5 +1,9 @@
 import { Router } from 'express';
+import authRoutes from './authRoutes.js';
+
 const router = Router();
+
+router.use('/auth', authRoutes); 
 
 // Main API route
 router.get('/', (req, res) => {

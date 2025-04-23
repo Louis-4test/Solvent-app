@@ -10,6 +10,14 @@ import paymentRoutes from './routes/paymentRoutes.js';
 
 const app = express();
 
+// Enable CORS for all routes
+app.use(cors({
+  origin: 'http://localhost:5173', // Your Vite frontend URL
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -31,5 +39,12 @@ app.get('/api/health', (req, res) => {
 app.use((req, res) => {
   res.status(404).json({ message: 'Not Found' });
 });
+
+// 500 Handler
+app.use((err, req, res, next) => {
+  logger.error(err.stack);
+  res.status(500).json({ message: "Something went wrong." });
+});
+
 
 export default app;

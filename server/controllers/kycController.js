@@ -1,72 +1,105 @@
-// server/controllers/kycController.js
-import KYC from '../models/kyc.js'; 
+// controllers/kycController.js
+import { User, KYC } from '../models/index.js';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 
-export const initiateKYC = async (req, res) => {
-  try {
-    // Implementation for initiating KYC process
-    res.status(200).json({ 
-      success: true, 
-      message: 'KYC process initiated' 
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
-  }
-};
+// Get directory name for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-export const verifyKYC = async (req, res) => {
+export async function uploadKYCDocument(req, res) {
   try {
-    const { userId, documentType, documentData } = req.body;
-    
-    // Validate input
-    if (!userId || !documentType || !documentData) {
+    if (!req.file) {
       return res.status(400).json({ 
-        success: false, 
-        message: 'Missing required fields' 
+        success: false,
+        error: 'No file uploaded',
+        code: 'MISSING_FILE'
       });
     }
 
-    // Process KYC verification
-    const verificationResult = await processVerification(userId, documentType, documentData);
+    // Get user ID from auth middleware
+    const userId = req.user.id;
 
-    res.status(200).json({
+    // Validate file exists on disk
+    const fileExists = fs.existsSync(req.file.path);
+    if (!fileExists) {
+      return res.status(400).json({
+        success: false,
+        error: 'Uploaded file not found',
+        code: 'FILE_NOT_FOUND'
+      });
+    }
+
+    // Save KYC document info
+    const kyc = await KYC.create({
+      userId,
+      documentType: 'ID',
+      documentPath: req.file.path,
+      originalName: req.file.originalname,
+      mimeType: req.file.mimetype,
+      size: req.file.size,
+      status: 'pending'
+    });
+
+    // Verification process (runs in background)
+    startVerificationProcess(userId, kyc);
+
+    return res.status(201).json({ 
       success: true,
-      data: verificationResult
+      message: 'KYC document uploaded successfully',
+      data: {
+        kycId: kyc.id,
+        status: 'pending',
+        documentType: 'ID',
+        originalName: req.file.originalname,
+        fileSize: req.file.size,
+        createdAt: kyc.createdAt
+      }
     });
-  } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
-    });
-  }
-};
 
-export const getKYCStatus = async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const status = await checkKYCStatus(userId);
+  } catch (error) {
+    console.error('KYC upload error:', error);
     
-    res.status(200).json({
-      success: true,
-      status
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
+    // Clean up uploaded file if error occurred
+    if (req.file?.path) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (fsError) {
+        console.error('Failed to clean up file:', fsError);
+      }
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: 'KYC processing failed',
+      code: 'PROCESSING_ERROR',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
-};
-
-// Helper functions (would be in a service layer in larger apps)
-async function processVerification(userId, documentType, documentData) {
-  // Implementation for actual KYC verification
-  return { verified: true, timestamp: new Date() };
 }
 
-async function checkKYCStatus(userId) {
-  // Implementation for checking status
-  return 'verified';
+// Separate function for verification process
+async function startVerificationProcess(userId, kyc) {
+  try {
+    // Simulate verification delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    await kyc.update({ 
+      status: 'verified',
+      verifiedAt: new Date()
+    });
+    
+    await User.update({ 
+      kycVerified: true,
+      kycVerifiedAt: new Date() 
+    }, { 
+      where: { id: userId } 
+    });
+
+    console.log(`KYC verified for user ${userId}`);
+  } catch (error) {
+    console.error('KYC verification failed:', error);
+    await kyc.update({ status: 'failed' });
+  }
 }

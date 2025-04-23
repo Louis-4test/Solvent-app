@@ -33,8 +33,8 @@ const sequelize = new Sequelize(
     console.log('✅ Database connection established successfully');
     
     // Sync models with existing database
-    await sequelize.sync({ alter: true });
-    console.log('✅ Database models synchronized');
+    /*await sequelize.sync({ force: true });
+    console.log('✅ Database models synchronized');*/
   } catch (error) {
     console.error('❌ Database connection failed:', error);
     process.exit(1);

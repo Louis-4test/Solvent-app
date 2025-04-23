@@ -1,12 +1,24 @@
-import express from 'express';
-import { register } from '../controllers/authController.js';
+import { Router } from 'express';
+import {
+  register,
+  sendMFACode,
+  verifyMFA,
+  login,
+  verifyLoginMFA
+} from '../controllers/authController.js';
+import authMiddleware from '../middleware/auth.js';
 
-const router = express.Router();
+const router = Router();
 
-// Define your routes
+// Registration route (now properly mounted at /api/auth/register)
 router.post('/register', register);
 
-// You can define the login route later
-// router.post('/login', login);
+// MFA routes
+router.post('/send-mfa', sendMFACode);
+router.post('/verify-mfa', verifyMFA);
+
+// Authentication routes
+router.post('/login', login);
+router.post('/verify-login-mfa', verifyLoginMFA);
 
 export default router;
