@@ -5,10 +5,15 @@ import { User } from '../models/index.js';
 import emailService from '../services/emailService.js';
 import { generateToken, generateTempToken } from '../utils/helpers.js';
 
+// Constants
+const MFA_CODE_EXPIRATION_MINUTES = 10;
+const TOKEN_EXPIRATION = '24h';
+const TEMP_TOKEN_EXPIRATION = '15m';
+
 // Helper to generate and save MFA code
 const generateAndSaveMFACode = async (user) => {
   const mfaCode = Math.floor(100000 + Math.random() * 900000).toString();
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiration
+  const expiresAt = new Date(Date.now() + MFA_CODE_EXPIRATION_MINUTES * 60 * 1000);
   
   await user.update({
     mfaCode,
@@ -22,6 +27,16 @@ export const register = async (req, res) => {
   try {
     const { fullName, email, phone, password } = req.body;
 
+    // Validate input
+    if (!email || !password || !fullName || !phone) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields',
+        code: 'MISSING_FIELDS'
+      });
+    }
+
+    // Check for existing user
     const existingUser = await User.findOne({ 
       where: { 
         [Op.or]: [{ email }, { phone }] 
@@ -29,40 +44,72 @@ export const register = async (req, res) => {
     });
     
     if (existingUser) {
-      return res.status(400).json({ 
+      return res.status(409).json({ 
+        success: false,
         error: existingUser.email === email 
           ? 'Email already in use' 
-          : 'Phone number already in use' 
+          : 'Phone number already in use',
+        code: existingUser.email === email ? 'EMAIL_EXISTS' : 'PHONE_EXISTS'
       });
     }
 
+    // Create user
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await User.create({
       fullName,
       email,
       phone,
-      password: hashedPassword
+      password: hashedPassword,
+      isVerified: true,
+      mfaEnabled: false,
+      kycVerified: false
     });
 
-    const token = generateToken(user.id);
+    // Generate MFA code for verification
+    const mfaCode = await generateAndSaveMFACode(user);
+    
+    // Send verification email
+    await emailService.sendEmail({
+      to: user.email,
+      subject: 'Verify Your Account',
+      text: `Welcome ${fullName}! Your verification code is: ${mfaCode} (expires in ${MFA_CODE_EXPIRATION_MINUTES} minutes)`
+    });
+
+    // Generate temporary token for verification flow
+    const tempToken = generateTempToken(user.id);
 
     res.status(201).json({
       success: true,
-      message: 'Registration successful',
-      userId: user.id,
-      token,
+      message: 'Registration successful. Verification code sent to email.',
+      tempToken,
       user: {
+        id: user.id,
         email: user.email,
+        isVerified: true,
         fullName: user.fullName
       }
     });
 
   } catch (error) {
     console.error('Registration error:', error);
-    res.status(500).json({ 
+    
+    let statusCode = 500;
+    let errorMessage = 'Registration failed';
+    let errorCode = 'SERVER_ERROR';
+    let details = process.env.NODE_ENV === 'development' ? error.message : undefined;
+
+    if (error.name === 'SequelizeValidationError') {
+      statusCode = 400;
+      errorMessage = 'Validation error';
+      errorCode = 'VALIDATION_ERROR';
+      details = error.errors.map(e => e.message);
+    }
+
+    res.status(statusCode).json({ 
       success: false,
-      message: 'Registration failed',
-      error: error.message
+      error: errorMessage,
+      code: errorCode,
+      details
     });
   }
 };
@@ -71,6 +118,16 @@ export const login = async (req, res) => {
   try {
     const { identifier, password } = req.body;
 
+    // Validate input
+    if (!identifier || !password) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Email/phone and password are required',
+        code: 'MISSING_CREDENTIALS'
+      });
+    }
+
+    // Find user
     const user = await User.findOne({
       where: {
         [Op.or]: [
@@ -81,30 +138,44 @@ export const login = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-
-    const passwordMatch = await bcrypt.compare(password, user.password);
-    if (!passwordMatch) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-
-    if (!user.isVerified) {
-      return res.status(403).json({ 
-        error: 'Account not verified. Please complete verification.' 
+      return res.status(401).json({ 
+        success: false,
+        error: 'Invalid credentials',
+        code: 'INVALID_CREDENTIALS'
       });
     }
 
+    // Verify password
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+      return res.status(401).json({ 
+        success: false,
+        error: 'Invalid credentials',
+        code: 'INVALID_CREDENTIALS'
+      });
+    }
+
+    // Check if account is verified
+    if (!user.isVerified) {
+      return res.status(403).json({ 
+        success: false,
+        error: 'Account not verified. Please complete verification.',
+        code: 'ACCOUNT_NOT_VERIFIED'
+      });
+    }
+
+    // Handle MFA
     if (user.mfaEnabled) {
       const mfaCode = await generateAndSaveMFACode(user);
       
       await emailService.sendEmail({
         to: user.email,
         subject: 'Your Login Verification Code',
-        text: `Your verification code is: ${mfaCode} (expires in 10 minutes)`
+        text: `Your verification code is: ${mfaCode} (expires in ${MFA_CODE_EXPIRATION_MINUTES} minutes)`
       });
 
       return res.json({ 
+        success: true,
         message: 'MFA code sent to your registered email',
         mfaRequired: true,
         tempToken: generateTempToken(user.id),
@@ -112,9 +183,11 @@ export const login = async (req, res) => {
       });
     }
 
+    // Regular login success
     const token = generateToken(user.id);
 
     res.json({
+      success: true,
       message: 'Login successful',
       token,
       user: {
@@ -128,7 +201,11 @@ export const login = async (req, res) => {
 
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ error: 'Login failed. Please try again.' });
+    res.status(500).json({ 
+      success: false,
+      error: 'Login failed. Please try again.',
+      code: 'LOGIN_FAILED'
+    });
   }
 };
 
@@ -136,21 +213,45 @@ export const verifyLoginMFA = async (req, res) => {
   try {
     const { code, tempToken } = req.body;
     
+    // Validate input
+    if (!code || !tempToken) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Verification code and temporary token are required',
+        code: 'MISSING_VERIFICATION_DATA'
+      });
+    }
+
+    // Verify temp token
     const decoded = jwt.verify(tempToken, process.env.JWT_SECRET);
     const user = await User.findByPk(decoded.userId);
     
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ 
+        success: false,
+        error: 'User not found',
+        code: 'USER_NOT_FOUND'
+      });
     }
 
+    // Verify MFA code
     if (!user.mfaCode || user.mfaCode !== code) {
-      return res.status(400).json({ error: 'Invalid verification code' });
+      return res.status(400).json({ 
+        success: false,
+        error: 'Invalid verification code',
+        code: 'INVALID_MFA_CODE'
+      });
     }
 
     if (new Date() > user.mfaCodeExpires) {
-      return res.status(400).json({ error: 'Verification code has expired' });
+      return res.status(400).json({ 
+        success: false,
+        error: 'Verification code has expired',
+        code: 'EXPIRED_MFA_CODE'
+      });
     }
 
+    // Clear MFA code and generate auth token
     await user.update({ 
       mfaCode: null,
       mfaCodeExpires: null 
@@ -159,6 +260,7 @@ export const verifyLoginMFA = async (req, res) => {
     const token = generateToken(user.id);
 
     res.json({
+      success: true,
       message: 'MFA verification successful',
       token,
       user: {
@@ -174,14 +276,26 @@ export const verifyLoginMFA = async (req, res) => {
     console.error('MFA verification error:', error);
     
     if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({ error: 'Verification session expired. Please login again.' });
+      return res.status(401).json({ 
+        success: false,
+        error: 'Verification session expired. Please login again.',
+        code: 'TEMP_TOKEN_EXPIRED'
+      });
     }
     
     if (error.name === 'JsonWebTokenError') {
-      return res.status(401).json({ error: 'Invalid verification session' });
+      return res.status(401).json({ 
+        success: false,
+        error: 'Invalid verification session',
+        code: 'INVALID_TEMP_TOKEN'
+      });
     }
     
-    res.status(500).json({ error: 'MFA verification failed' });
+    res.status(500).json({ 
+      success: false,
+      error: 'MFA verification failed',
+      code: 'MFA_VERIFICATION_FAILED'
+    });
   }
 };
 
@@ -189,9 +303,22 @@ export const sendMFACode = async (req, res) => {
   try {
     const { email } = req.body;
 
+    // Validate input
+    if (!email) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Email is required',
+        code: 'MISSING_EMAIL'
+      });
+    }
+
     const user = await User.findOne({ where: { email } });
     if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ 
+        success: false,
+        error: 'User not found',
+        code: 'USER_NOT_FOUND'
+      });
     }
 
     const mfaCode = await generateAndSaveMFACode(user);
@@ -199,16 +326,21 @@ export const sendMFACode = async (req, res) => {
     await emailService.sendEmail({
       to: user.email,
       subject: 'Your MFA Verification Code',
-      text: `Your verification code is: ${mfaCode} (expires in 10 minutes)`
+      text: `Your verification code is: ${mfaCode} (expires in ${MFA_CODE_EXPIRATION_MINUTES} minutes)`
     });
 
     res.json({ 
+      success: true,
       message: 'MFA code sent successfully',
       email: user.email
     });
   } catch (error) {
     console.error('MFA code sending error:', error);
-    res.status(500).json({ error: 'Failed to send MFA code' });
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to send MFA code',
+      code: 'MFA_SEND_FAILED'
+    });
   }
 };
 
@@ -216,19 +348,42 @@ export const verifyMFA = async (req, res) => {
   try {
     const { email, code } = req.body;
 
-    const user = await User.findOne({ where: { email } });
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+    // Validate input
+    if (!email || !code) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Email and verification code are required',
+        code: 'MISSING_VERIFICATION_DATA'
+      });
     }
 
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(404).json({ 
+        success: false,
+        error: 'User not found',
+        code: 'USER_NOT_FOUND'
+      });
+    }
+
+    // Verify MFA code
     if (!user.mfaCode || user.mfaCode !== code) {
-      return res.status(400).json({ error: 'Invalid verification code' });
+      return res.status(400).json({ 
+        success: false,
+        error: 'Invalid verification code',
+        code: 'INVALID_MFA_CODE'
+      });
     }
 
     if (new Date() > user.mfaCodeExpires) {
-      return res.status(400).json({ error: 'Verification code has expired' });
+      return res.status(400).json({ 
+        success: false,
+        error: 'Verification code has expired',
+        code: 'EXPIRED_MFA_CODE'
+      });
     }
 
+    // Update user verification status
     await user.update({ 
       isVerified: true,
       mfaEnabled: true,
@@ -239,6 +394,7 @@ export const verifyMFA = async (req, res) => {
     const token = generateToken(user.id);
 
     res.json({ 
+      success: true,
       message: 'MFA verification successful',
       token,
       user: {
@@ -252,6 +408,10 @@ export const verifyMFA = async (req, res) => {
     });
   } catch (error) {
     console.error('MFA verification error:', error);
-    res.status(500).json({ error: 'MFA verification failed' });
+    res.status(500).json({ 
+      success: false,
+      error: 'MFA verification failed',
+      code: 'MFA_VERIFICATION_FAILED'
+    });
   }
 };

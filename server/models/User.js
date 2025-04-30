@@ -27,9 +27,9 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING,
     allowNull: false
   },
-  isVerified: {
+  isVerified: {  // ← Now properly closed
     type: DataTypes.BOOLEAN,
-    defaultValue: false
+    defaultValue: true
   },
   mfaEnabled: {
     type: DataTypes.BOOLEAN,

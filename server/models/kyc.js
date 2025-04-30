@@ -36,7 +36,7 @@ const KYC = sequelize.define('KYC', {
   },
   document_back_url: {
     type: DataTypes.STRING,
-    allowNull: true // Not all documents need back photos
+    allowNull: true 
   },
   selfie_url: {
     type: DataTypes.STRING,

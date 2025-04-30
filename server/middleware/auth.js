@@ -2,25 +2,32 @@ import jwt from 'jsonwebtoken';
 import { User } from '../models/index.js';
 
 // middleware/auth.js
-export const authenticateUser = async (req, res, next) => {
+export const auth = async (req, res, next) => {
   try {
+    console.log('Authorization header:', req.header('Authorization')); // Debug
+    
     const authHeader = req.header('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
-      throw new Error('Invalid authorization format');
+      console.error('Missing or malformed auth header');
+      return res.status(401).json({ error: 'Invalid authorization format' });
     }
-    
-    const token = authHeader.split(' ')[1];
-    if (!token) throw new Error('Authentication required');
+
+    const token = authHeader.split(' ')[1].trim();
+    console.log('Extracted token:', token); // Debug
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('Decoded token:', decoded); // Debug
+
     const user = await User.findByPk(decoded.userId);
-    
-    if (!user) throw new Error('User not found');
+    if (!user) {
+      console.error('User not found for ID:', decoded.userId);
+      return res.status(401).json({ error: 'User not found' });
+    }
 
     req.user = user;
     next();
   } catch (error) {
-    console.error('Authentication error:', error.message);
+    console.error('Full auth error:', error);
     res.status(401).json({ 
       error: 'Authentication failed',
       details: error.message 

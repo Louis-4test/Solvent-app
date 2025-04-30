@@ -1,44 +1,57 @@
 import nodemailer from 'nodemailer';
+import dotenv from 'dotenv';
 
-// Create reusable transporter object using SMTP transport
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || 'smtp.example.com',
-  port: process.env.EMAIL_PORT || 587,
-  secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for other ports
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD
-  }
-});
+dotenv.config();
 
-/**
- * Send email with options
- * @param {Object} options - Email options
- * @param {string} options.to - Recipient email address
- * @param {string} options.subject - Email subject
- * @param {string} options.text - Plain text body
- * @param {string} [options.html] - HTML body
- * @returns {Promise<Object>} - Result of sending email
- */
+let transporter;
+
+if (process.env.NODE_ENV !== 'development') {
+  transporter = nodemailer.createTransport({
+    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false, // true for port 465
+    auth: {
+      user: process.env.EMAIL_USERNAME,
+      pass: process.env.EMAIL_PASSWORD
+    },
+    tls: {
+      rejectUnauthorized: false // Allow self-signed certs in dev/test
+    }
+  });
+}
+
 export const sendEmail = async ({ to, subject, text, html }) => {
   try {
-    const info = await transporter.sendMail({
-      from: `"Solvent App" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[DEV MODE] Simulating email to: ${to}`);
+      console.log(`Subject: ${subject}`);
+      console.log(`Text: ${text}`);
+      if (html) console.log(`HTML: ${html}`);
+      return { message: 'Simulated email sent (dev mode)' };
+    }
+
+    if (!process.env.EMAIL_USERNAME || !process.env.EMAIL_PASSWORD) {
+      throw new Error('Email credentials not configured');
+    }
+
+    const mailOptions = {
+      from: `"Solvent App" <${process.env.EMAIL_USERNAME}>`,
       to,
       subject,
       text,
-      html
-    });
+      html: html || text
+    };
 
-    console.log('Message sent: %s', info.messageId);
-    return { success: true, messageId: info.messageId };
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent:', info.messageId);
+    return info;
   } catch (error) {
     console.error('Error sending email:', error);
-    throw new Error('Failed to send email');
+    throw new Error(`Failed to send email: ${error.message}`);
   }
 };
 
-// Alternative named export if you prefer
 export default {
   sendEmail
 };

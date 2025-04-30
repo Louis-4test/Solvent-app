@@ -19,46 +19,38 @@ export default function Register() {
   };
 
   const onSubmit = async (data) => {
-    try {
-      setLoading(true);
-      setError('');
+  try {
+    setLoading(true);
+    setError('');
+    
+    // 1. First register the user
+    const registerResponse = await authAPI.register({
+      fullName: data.fullName,
+      email: data.email,
+      phone: data.phone,
+      password: data.password
+    });
 
-      // Validate file before upload
-      const file = data.idDocument[0];
-      if (!file) {
-        throw new Error('Please select an ID document');
-      }
+    // 2. Store the token from registration response
+    const { token } = registerResponse.data;
+    localStorage.setItem('token', token);
 
-      // Step 1: Register user (without awaiting)
-      const registerPromise = authAPI.register({
-        fullName: data.fullName,
-        email: data.email,
-        phone: data.phone,
-        password: data.password
-      });
+    // 3. Prepare and upload KYC document
+    const file = data.idDocument[0];
+    if (!file) {
+      throw new Error('Please select an ID document');
+    }
+    
+    const formData = new FormData();
+    formData.append('idDocument', file);
+    await kycAPI.upload(formData);
 
-      // Step 2: Prepare KYC upload (parallel processing)
-      const formData = new FormData();
-      formData.append('idDocument', file);
-      
-      // Wait for both registration and KYC upload to complete
-      const [registerResponse] = await Promise.all([
-        registerPromise,
-        kycAPI.upload(formData)
-      ]);
-
-      // Step 3: Send MFA code
-      await authAPI.sendMFACode(data.email);
-      
-      navigate('/verify-mfa', { 
-        state: { 
-          email: data.email,
-          action: 'registration',
-          userId: registerResponse.userId
-        }
-      });
-      
-    } catch (error) {
+    // 4. Send MFA code
+    await authAPI.sendMFACode(data.email);
+    
+    navigate('/dashboard');
+    
+  } catch (error) {
       let errorMessage = 'Registration failed. Please try again.';
       
       if (error.response) {
