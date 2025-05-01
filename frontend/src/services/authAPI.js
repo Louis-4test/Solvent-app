@@ -9,22 +9,59 @@ const api = axios.create({
   withCredentials: true // If using cookies
 });
 
-// Add response interceptor for error handling
+// Enhanced response interceptor
 api.interceptors.response.use(
-  response => response,
+  response => {
+    // Validate successful response structure
+    if (!response.data) {
+      throw new Error('Invalid server response format');
+    }
+    return response;
+  },
   error => {
     if (error.code === 'ERR_NETWORK') {
       console.error('Network Error - Is the backend server running?');
+      throw new Error('Unable to connect to server. Please check your connection.');
     }
-    return Promise.reject(error);
+    
+    // Handle axios errors
+    const errorMessage = error.response?.data?.message || 
+                        error.message || 
+                        'Request failed';
+    
+    // Convert to standard error format
+    const normalizedError = new Error(errorMessage);
+    normalizedError.status = error.response?.status;
+    normalizedError.data = error.response?.data;
+    
+    throw normalizedError;
   }
 );
+
+// Helper to validate registration response
+const validateRegistration = (data) => {
+  const responseData = data.data || data;
+  
+  if (!responseData.token) {
+    console.error('Missing token in response:', data);
+    throw new Error('Invalid registration response - missing token');
+  }
+
+  return {
+    token: responseData.token,
+    user: responseData.user || {
+      id: responseData.id,
+      email: responseData.email,
+      fullName: responseData.fullName
+    }
+  };
+};
 
 export default {
   register: async (userData) => {
     try {
       const response = await api.post('/auth/register', userData);
-      return response.data;
+      return validateRegistration(response.data);
     } catch (error) {
       console.error('Registration error:', error);
       throw error;
@@ -32,33 +69,80 @@ export default {
   },
   
   sendMFACode: async (email) => {
-    const response = await api.post('/auth/send-mfa', { email });
-    return response.data;
+    try {
+      const response = await api.post('/auth/send-mfa', { email });
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Failed to send MFA code');
+      }
+      return response.data;
+    } catch (error) {
+      console.error('MFA send error:', error);
+      throw error;
+    }
   },
   
   verifyMFA: async (email, code) => {
-    const response = await api.post('/auth/verify-mfa', { email, code });
-    return response.data;
+    try {
+      const response = await api.post('/auth/verify-mfa', { email, code });
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'MFA verification failed');
+      }
+      return response.data;
+    } catch (error) {
+      console.error('MFA verification error:', error);
+      throw error;
+    }
   },
   
   login: async (credentials) => {
-    const response = await api.post('/auth/login', credentials);
-    return response.data;
+    try {
+      const response = await api.post('/auth/login', credentials);
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Login failed');
+      }
+      return response.data;
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
   },
 
   verifyLoginMFA: async (code, tempToken) => {
-    const response = await api.post('/auth/verify-login-mfa', { code, tempToken });
-    return response.data;
+    try {
+      const response = await api.post('/auth/verify-login-mfa', { code, tempToken });
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Login verification failed');
+      }
+      return response.data;
+    } catch (error) {
+      console.error('Login MFA error:', error);
+      throw error;
+    }
   },
 
-  // Add other auth methods as needed
   forgotPassword: async (email) => {
-    const response = await api.post('/auth/forgot-password', { email });
-    return response.data;
+    try {
+      const response = await api.post('/auth/forgot-password', { email });
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Password reset failed');
+      }
+      return response.data;
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      throw error;
+    }
   },
 
   resetPassword: async (token, newPassword) => {
-    const response = await api.post('/auth/reset-password', { token, newPassword });
-    return response.data;
+    try {
+      const response = await api.post('/auth/reset-password', { token, newPassword });
+      if (!response.data.success) {
+        throw new Error(response.data.message || 'Password reset failed');
+      }
+      return response.data;
+    } catch (error) {
+      console.error('Reset password error:', error);
+      throw error;
+    }
   }
 };

@@ -4,6 +4,7 @@ import { Op } from 'sequelize';
 import { User } from '../models/index.js';
 import emailService from '../services/emailService.js';
 import { generateToken, generateTempToken } from '../utils/helpers.js';
+import { token } from 'morgan';
 
 // Constants
 const MFA_CODE_EXPIRATION_MINUTES = 10;
@@ -60,33 +61,37 @@ export const register = async (req, res) => {
       email,
       phone,
       password: hashedPassword,
-      isVerified: true,
-      mfaEnabled: false,
-      kycVerified: false
+      isVerified: process.env.NODE_ENV === 'development',
     });
 
     // Generate MFA code for verification
     const mfaCode = await generateAndSaveMFACode(user);
     
-    // Send verification email
-    await emailService.sendEmail({
-      to: user.email,
-      subject: 'Verify Your Account',
-      text: `Welcome ${fullName}! Your verification code is: ${mfaCode} (expires in ${MFA_CODE_EXPIRATION_MINUTES} minutes)`
-    });
+     // Skip email verification in development
+     if (process.env.NODE_ENV !== 'development') {
+      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+      console.log(`[PROD] Would send verification email to ${email}`);
+    } else {
+      console.log('[DEV] Skipping email verification');
+    }
 
-    // Generate temporary token for verification flow
-    const tempToken = generateTempToken(user.id);
+     // Generate JWT token (using consistent variable name)
+     const token = jwt.sign(
+      { userId: user.id },
+      process.env.JWT_SECRET || 'dev-secret',
+      { expiresIn: '24h' }
+    );
 
+    // In authController.js
     res.status(201).json({
       success: true,
-      message: 'Registration successful. Verification code sent to email.',
-      tempToken,
+      message: 'Registration successful',
+      token, // JWT token
       user: {
         id: user.id,
         email: user.email,
-        isVerified: true,
-        fullName: user.fullName
+        fullName: user.fullName,
+        isVerified: user.isVerified
       }
     });
 

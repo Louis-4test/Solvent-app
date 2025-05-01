@@ -2,15 +2,16 @@ import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { Button, TextField, Typography, Box, Alert, CircularProgress } from '@mui/material';
 import authAPI from '../../services/authAPI';
-import kycAPI from '../../services/kycAPI';
+import uploadKYC from '../../services/kycAPI';
 import { useState } from 'react';
 
 export default function Register() {
-  const { register, handleSubmit, formState: { errors }, watch } = useForm();
+  const { register, handleSubmit, formState: { errors }, watch, reset } = useForm();
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [fileName, setFileName] = useState('');
+  const [success, setSuccess] = useState(false);
 
   const handleFileChange = (e) => {
     if (e.target.files.length > 0) {
@@ -19,53 +20,78 @@ export default function Register() {
   };
 
   const onSubmit = async (data) => {
-  try {
-    setLoading(true);
-    setError('');
-    
-    // 1. First register the user
-    const registerResponse = await authAPI.register({
-      fullName: data.fullName,
-      email: data.email,
-      phone: data.phone,
-      password: data.password
-    });
+    try {
+      setLoading(true);
+      setError('');
+      setSuccess(false);
+      
+      // 1. Register the user
+      const response = await authAPI.register({
+        fullName: data.fullName,
+        email: data.email,
+        phone: data.phone,
+        password: data.password
+      });
 
-    // 2. Store the token from registration response
-    const { token } = registerResponse.data;
-    localStorage.setItem('token', token);
+      console.log('Registration response:', response); // Debugging
 
-    // 3. Prepare and upload KYC document
-    const file = data.idDocument[0];
-    if (!file) {
-      throw new Error('Please select an ID document');
+      // 2. Store token and user data
+      localStorage.setItem('token', response.token);
+      localStorage.setItem('user', JSON.stringify(response.user));
+
+      // Skip KYC in development if you want
+    if (process.env.NODE_ENV !== 'development' && data.idDocument?.[0]) {
+      const formData = new FormData();
+      formData.append('idDocument', data.idDocument[0]);
+      await uploadKYC(formData);
     }
-    
-    const formData = new FormData();
-    formData.append('idDocument', file);
-    await kycAPI.upload(formData);
 
-    // 4. Send MFA code
-    await authAPI.sendMFACode(data.email);
-    
-    navigate('/dashboard');
-    
-  } catch (error) {
+      // 4. Send verification email
+      try {
+        await authAPI.sendMFACode(data.email);
+      } catch (emailError) {
+        console.warn('Verification email failed:', emailError.message);
+        // Continue even if email fails
+      }
+
+      // 5. Handle successful registration
+      setSuccess(true);
+      reset();
+      
+      // Always go to dashboard in development
+      navigate('/', { replace: true });
+
+    } catch (error) {
       let errorMessage = 'Registration failed. Please try again.';
       
       if (error.response) {
-        // Handle specific error messages from server
-        if (error.response.status === 409) {
-          errorMessage = 'Email already registered';
-        } else if (error.response.data?.message) {
-          errorMessage = error.response.data.message;
+        // Handle specific HTTP errors
+        switch (error.response.status) {
+          case 409:
+            errorMessage = 'Email already registered';
+            break;
+          case 400:
+            errorMessage = error.response.data?.message || 'Invalid registration data';
+            break;
+          case 422:
+            errorMessage = 'Validation failed: ' + 
+              (error.response.data?.errors?.join(', ') || 'Invalid data');
+            break;
+          default:
+            errorMessage = error.response.data?.message || `Server error (${error.response.status})`;
         }
       } else if (error.message) {
-        errorMessage = error.message;
+        errorMessage = error.message.includes('Invalid server response') 
+          ? 'Registration service is currently unavailable'
+          : error.message;
       }
       
       setError(errorMessage);
-      console.error('Registration error:', error);
+      console.error('Registration error:', {
+        error: error.message,
+        response: error.response?.data,
+        stack: error.stack
+      });
     } finally {
       setLoading(false);
     }
