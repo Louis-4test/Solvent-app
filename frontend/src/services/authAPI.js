@@ -97,12 +97,51 @@ export default {
   login: async (credentials) => {
     try {
       const response = await api.post('/auth/login', credentials);
-      if (!response.data.success) {
-        throw new Error(response.data.message || 'Login failed');
+      
+      if (!response.data) {
+        throw new Error('Empty server response');
       }
+  
+      if (!response.data.success) {
+        const error = new Error(response.data.message || 'Authentication failed');
+        error.code = response.data.code || 'LOGIN_FAILED';
+        error.status = response.status;
+        throw error;
+      }
+  
       return response.data;
     } catch (error) {
-      console.error('Login error:', error);
+      // Enhance axios errors
+      if (error.response) {
+        error.code = error.response.data?.code || 'LOGIN_FAILED';
+        error.message = error.response.data?.message || 
+                       error.response.data?.error || 
+                       error.message;
+        error.status = error.response.status;
+      }
+      
+      console.error('Login API error:', {
+        code: error.code,
+        message: error.message,
+        status: error.status,
+        responseData: error.response?.data
+      });
+      
+      throw error;
+    }
+  },
+
+  verifyLoginMFA: async (code, tempToken) => {
+    try {
+      const response = await api.post('/auth/verify-login-mfa', { code, tempToken });
+      
+      if (!response.data.success) {
+        throw new Error(response.data.error || 'MFA verification failed');
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error('MFA verification error:', error);
       throw error;
     }
   },

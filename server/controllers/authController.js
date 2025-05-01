@@ -132,7 +132,7 @@ export const login = async (req, res) => {
       });
     }
 
-    // Find user
+    // Find user with explicit error handling
     const user = await User.findOne({
       where: {
         [Op.or]: [
@@ -140,48 +140,70 @@ export const login = async (req, res) => {
           { phone: identifier }
         ]
       }
+    }).catch(dbError => {
+      console.error('Database error:', dbError);
+      throw new Error('Database operation failed');
     });
 
     if (!user) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         success: false,
         error: 'Invalid credentials',
-        code: 'INVALID_CREDENTIALS'
+        code: 'INVALID_CREDENTIALS',
+        message: 'No user found with this email/phone' 
       });
     }
 
-    // Verify password
+    // Add this right before bcrypt.compare
+    console.log('Login attempt for:', identifier);
+    console.log('Input password:', password);
+    console.log('Stored hash:', user.password);
+    console.log('Password match result:', passwordMatch);
+    
+    // Verify password with timing-safe comparison
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         success: false,
         error: 'Invalid credentials',
-        code: 'INVALID_CREDENTIALS'
+        code: 'INVALID_CREDENTIALS',
+        message: 'Incorrect password',
+        field: 'password' 
       });
     }
 
-    // Check if account is verified
+    // Account verification check
     if (!user.isVerified) {
       return res.status(403).json({ 
         success: false,
-        error: 'Account not verified. Please complete verification.',
-        code: 'ACCOUNT_NOT_VERIFIED'
+        error: 'Account not verified. Please check your email.',
+        code: 'UNVERIFIED_ACCOUNT',
+        resendLink: true
       });
     }
 
-    // Handle MFA
+    // MFA flow
     if (user.mfaEnabled) {
       const mfaCode = await generateAndSaveMFACode(user);
       
-      await emailService.sendEmail({
-        to: user.email,
-        subject: 'Your Login Verification Code',
-        text: `Your verification code is: ${mfaCode} (expires in ${MFA_CODE_EXPIRATION_MINUTES} minutes)`
-      });
+      try {
+        await emailService.sendEmail({
+          to: user.email,
+          subject: 'Your Login Verification Code',
+          text: `Your verification code is: ${mfaCode}`
+        });
+      } catch (emailError) {
+        console.error('MFA email failed:', emailError);
+        return res.status(500).json({
+          success: false,
+          error: 'Failed to send MFA code',
+          code: 'EMAIL_FAILURE'
+        });
+      }
 
       return res.json({ 
         success: true,
-        message: 'MFA code sent to your registered email',
+        message: 'Verification code sent',
         mfaRequired: true,
         tempToken: generateTempToken(user.id),
         email: user.email
@@ -191,7 +213,7 @@ export const login = async (req, res) => {
     // Regular login success
     const token = generateToken(user.id);
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Login successful',
       token,
@@ -199,6 +221,7 @@ export const login = async (req, res) => {
         id: user.id,
         email: user.email,
         fullName: user.fullName,
+        isVerified: user.isVerified,
         mfaEnabled: user.mfaEnabled,
         kycVerified: user.kycVerified
       }
@@ -206,10 +229,11 @@ export const login = async (req, res) => {
 
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       success: false,
       error: 'Login failed. Please try again.',
-      code: 'LOGIN_FAILED'
+      code: 'SERVER_ERROR',
+      systemError: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 };

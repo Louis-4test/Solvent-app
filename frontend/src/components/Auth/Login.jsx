@@ -12,46 +12,94 @@ export default function Login() {
   const [mfaRequired, setMfaRequired] = useState(false);
   const [tempToken, setTempToken] = useState('');
   const [email, setEmail] = useState('');
+  const [unverifiedEmail, setUnverifiedEmail] = useState('');
 
   const onSubmit = async (data) => {
     try {
       setLoading(true);
       setError('');
-
-      const response = await authAPI.login(data);
-      
+  
+      const response = await authAPI.login({
+        identifier: data.identifier.trim(),
+        password: data.password
+      });
+  
       if (response.mfaRequired) {
         setMfaRequired(true);
         setTempToken(response.tempToken);
-        setEmail(response.email || data.identifier.includes('@') ? data.identifier : '');
+        setEmail(response.email);
       } else {
-        // Store token and user data
-        localStorage.setItem('token', response.token);
-        localStorage.setItem('user', JSON.stringify(response.user));
-        navigate('/dashboard');
+        handleLoginSuccess(response);
       }
     } catch (error) {
-      console.error('Login failed:', error);
-      setError(error.response?.data?.error || 'Login failed. Please check your credentials and try again.');
+      let errorMessage = 'Login failed. Please try again.';
+      
+      if (error.code === 'INVALID_CREDENTIALS') {
+        errorMessage = error.message || 'Invalid email/phone or password';
+      } else if (error.status === 401) {
+        errorMessage = 'Authentication failed. Please check your credentials.';
+      }
+      
+      setError(errorMessage);
+      console.error('Login error:', {
+        message: error.message,
+        code: error.code,
+        status: error.status
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleMFAVerify = async (code) => {
+  const handleLoginSuccess = (response) => {
+    localStorage.setItem('token', response.token);
+    localStorage.setItem('user', JSON.stringify(response.user));
+    navigate('/dashboard', { replace: true });
+  };
+
+  const handleLoginError = (error) => {
+    let errorMessage = 'Login failed. Please try again.';
+    
+    switch (error.code) {
+      case 'INVALID_CREDENTIALS':
+        errorMessage = 'Invalid email/phone or password';
+        break;
+      case 'UNVERIFIED_ACCOUNT':
+        errorMessage = 'Account not verified. Please check your email.';
+        setUnverifiedEmail(error.response?.data?.email || '');
+        break;
+      case 'EMAIL_FAILURE':
+        errorMessage = 'Failed to send verification email. Please try again later.';
+        break;
+      default:
+        errorMessage = error.message || errorMessage;
+    }
+
+    setError(errorMessage);
+    console.error('Login error:', error);
+  };
+
+  const handleMFAVerify = async (mfaCode) => {
     try {
       setLoading(true);
       setError('');
 
-      const response = await authAPI.verifyLoginMFA(code, tempToken);
-      
-      // Store token and user data
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      navigate('/dashboard');
+      const response = await authAPI.verifyLoginMFA(mfaCode, tempToken);
+      handleLoginSuccess(response);
     } catch (error) {
-      console.error('MFA verification failed:', error);
-      setError(error.response?.data?.error || 'Invalid verification code. Please try again.');
+      setError(error.message || 'Invalid verification code');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    try {
+      setLoading(true);
+      await authAPI.sendVerificationEmail(unverifiedEmail);
+      setError('Verification email resent. Please check your inbox.');
+    } catch (error) {
+      setError('Failed to resend verification email.');
     } finally {
       setLoading(false);
     }
