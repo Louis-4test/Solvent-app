@@ -99,8 +99,8 @@ This document outlines the UI screens and workflows required for the **Fintech W
 - They monitor transactions for anomalies and take action on suspicious transactions.
 
 ## Technologies Used
-- Frontend: HTML, CSS, JavaScript (React, Vue.js, or Angular)
-- Backend: Python (Django or Flask), Node.js
+- Frontend: React.js
+- Backend: Node.js, Express
 - Database: PostgreSQL, MongoDB
 - Security: OAuth, JWT, Multi-Factor Authentication (MFA)
 
