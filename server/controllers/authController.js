@@ -7,7 +7,7 @@ import { generateToken, generateTempToken } from '../utils/helpers.js';
 import { token } from 'morgan';
 
 // Constants
-const MFA_CODE_EXPIRATION_MINUTES = 50;
+const MFA_CODE_EXPIRATION_MINUTES = 55;
 const TOKEN_EXPIRATION = '24h';
 const TEMP_TOKEN_EXPIRATION = '15m';
 
