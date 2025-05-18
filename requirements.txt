@@ -1,0 +1,6 @@
+express==4.17.1
+Mysql
+cors==2.8.5
+jsonwebtoken==8.5.1
+dotenv==8.2.0
+bcryptjs==2.4.3
