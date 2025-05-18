@@ -15,6 +15,10 @@ export default function Login() {
   const [unverifiedEmail, setUnverifiedEmail] = useState('');
 
   const onSubmit = async (data) => {
+    console.log('Submitting login with:', { 
+      identifier: data.identifier.trim(), 
+      password: data.password 
+    });
     try {
       setLoading(true);
       setError('');
@@ -54,7 +58,7 @@ export default function Login() {
   const handleLoginSuccess = (response) => {
     localStorage.setItem('token', response.token);
     localStorage.setItem('user', JSON.stringify(response.user));
-    navigate('/dashboard', { replace: true });
+    navigate('/', { replace: true });
   };
 
   const handleLoginError = (error) => {

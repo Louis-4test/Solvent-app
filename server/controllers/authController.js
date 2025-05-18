@@ -7,7 +7,7 @@ import { generateToken, generateTempToken } from '../utils/helpers.js';
 import { token } from 'morgan';
 
 // Constants
-const MFA_CODE_EXPIRATION_MINUTES = 10;
+const MFA_CODE_EXPIRATION_MINUTES = 50;
 const TOKEN_EXPIRATION = '24h';
 const TEMP_TOKEN_EXPIRATION = '15m';
 
@@ -158,10 +158,11 @@ export const login = async (req, res) => {
     console.log('Login attempt for:', identifier);
     console.log('Input password:', password);
     console.log('Stored hash:', user.password);
-    console.log('Password match result:', passwordMatch);
     
     // Verify password with timing-safe comparison
     const passwordMatch = await bcrypt.compare(password, user.password);
+    console.log('Password match result:', passwordMatch);
+
     if (!passwordMatch) {
       return res.status(401).json({
         success: false,
