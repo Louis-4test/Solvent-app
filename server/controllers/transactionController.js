@@ -1,6 +1,16 @@
 import sequelize from '../config/db.js';
+import crypto from 'crypto';
 import Transaction from '../models/Transaction.js';
 import User from '../models/User.js';
+import { createNotificationForUser } from './notificationController.js';
+
+const SAFE_USER_ATTRS = ['id', 'fullName', 'email', 'phone'];
+
+const userSummaryInclude = (as) => ({
+  model: User,
+  as,
+  attributes: SAFE_USER_ATTRS
+});
 
 export const createTransaction = async (req, res) => {
   const t = await sequelize.transaction();
@@ -37,7 +47,8 @@ export const createTransaction = async (req, res) => {
       amount,
       narration,
       status: 'pending',
-      type: 'transfer'
+      type: 'transfer',
+      reference: `TXN-${crypto.randomUUID().replace(/-/g, '').slice(0, 12).toUpperCase()}`
     }, { transaction: t });
 
     // Complete transaction (simulated)
@@ -60,6 +71,111 @@ export const createTransaction = async (req, res) => {
   }
 };
 
+export const transferFunds = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
+    const { recipientPhone, amount, channel = 'p2p', narration } = req.body;
+    const senderId = req.user.id;
+
+    if (!recipientPhone) {
+      await t.rollback();
+      return res.status(400).json({
+        success: false,
+        message: 'Recipient phone number is required',
+        code: 'MISSING_RECIPIENT'
+      });
+    }
+
+    if (!amount || amount <= 0) {
+      await t.rollback();
+      return res.status(400).json({
+        success: false,
+        message: 'Enter a valid amount',
+        code: 'INVALID_AMOUNT'
+      });
+    }
+
+    const recipient = await User.findOne({ where: { phone: recipientPhone } });
+    if (!recipient) {
+      await t.rollback();
+      return res.status(404).json({
+        success: false,
+        message: `No Solvent account found for ${recipientPhone}`,
+        code: 'RECIPIENT_NOT_FOUND'
+      });
+    }
+
+    if (recipient.id === senderId) {
+      await t.rollback();
+      return res.status(400).json({
+        success: false,
+        message: 'You cannot transfer money to yourself',
+        code: 'SELF_TRANSFER'
+      });
+    }
+
+    const transaction = await Transaction.create({
+      sender_id: senderId,
+      recipient_id: recipient.id,
+      amount,
+      narration: narration || `Transfer via ${channel}`,
+      status: 'completed',
+      type: 'transfer',
+      reference: `TXN-${crypto.randomUUID().replace(/-/g, '').slice(0, 12).toUpperCase()}`
+    }, { transaction: t });
+
+    await t.commit();
+
+    await Promise.all([
+      createNotificationForUser(senderId, `You sent XAF ${amount} to ${recipient.fullName}.`),
+      createNotificationForUser(recipient.id, `You received XAF ${amount} via Solvent.`)
+    ]);
+
+    const created = await Transaction.findByPk(transaction.id, {
+      include: [userSummaryInclude('Sender'), userSummaryInclude('Recipient')]
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: `Successfully transferred XAF ${amount} to ${recipient.fullName}`,
+      data: created
+    });
+
+  } catch (error) {
+    await t.rollback();
+    return res.status(500).json({ 
+      success: false,
+      error: error.message 
+    });
+  }
+};
+
+export const getMyTransactions = async (req, res) => {
+  try {
+    const transactions = await Transaction.findAll({
+      where: {
+        [sequelize.Op.or]: [
+          { sender_id: req.user.id },
+          { recipient_id: req.user.id }
+        ]
+      },
+      order: [['created_at', 'DESC']],
+      limit: 10,
+      include: [userSummaryInclude('Sender'), userSummaryInclude('Recipient')]
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: transactions
+    });
+  } catch (error) {
+    return res.status(500).json({ 
+      success: false,
+      error: error.message 
+    });
+  }
+};
+
 export const getTransactions = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -72,18 +188,7 @@ export const getTransactions = async (req, res) => {
         ]
       },
       order: [['created_at', 'DESC']],
-      include: [
-        {
-          model: User,
-          as: 'Sender',
-          attributes: ['id', 'name', 'email']
-        },
-        {
-          model: User,
-          as: 'Recipient',
-          attributes: ['id', 'name', 'email']
-        }
-      ]
+      include: [userSummaryInclude('Sender'), userSummaryInclude('Recipient')]
     });
 
     return res.status(200).json({
@@ -103,18 +208,7 @@ export const getTransactionById = async (req, res) => {
     const { id } = req.params;
     
     const transaction = await Transaction.findByPk(id, {
-      include: [
-        {
-          model: User,
-          as: 'Sender',
-          attributes: ['id', 'name', 'email']
-        },
-        {
-          model: User,
-          as: 'Recipient',
-          attributes: ['id', 'name', 'email']
-        }
-      ]
+      include: [userSummaryInclude('Sender'), userSummaryInclude('Recipient')]
     });
 
     if (!transaction) {

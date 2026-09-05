@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { Button, TextField, Typography, Box, Alert, CircularProgress } from '@mui/material';
 import authAPI from '../../services/authAPI';
-import uploadKYC from '../../services/kycAPI';
+import kycAPI from '../../services/kycAPI';
 import { useState } from 'react';
 
 export default function Register() {
@@ -10,20 +10,11 @@ export default function Register() {
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [fileName, setFileName] = useState('');
-  const [success, setSuccess] = useState(false);
-
-  const handleFileChange = (e) => {
-    if (e.target.files.length > 0) {
-      setFileName(e.target.files[0].name);
-    }
-  };
 
   const onSubmit = async (data) => {
     try {
       setLoading(true);
       setError('');
-      setSuccess(false);
       
       // 1. Register the user
       const response = await authAPI.register({
@@ -39,12 +30,12 @@ export default function Register() {
       localStorage.setItem('token', response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
 
-      // Skip KYC in development if you want
-    if (process.env.NODE_ENV !== 'development' && data.idDocument?.[0]) {
-      const formData = new FormData();
-      formData.append('idDocument', data.idDocument[0]);
-      await uploadKYC(formData);
-    }
+      // 3. Upload KYC document if provided
+      if (data.idDocument?.[0]) {
+        const formData = new FormData();
+        formData.append('idDocument', data.idDocument[0]);
+        await kycAPI.uploadKYC(formData);
+      }
 
       // 4. Send verification email
       try {
@@ -55,11 +46,10 @@ export default function Register() {
       }
 
       // 5. Handle successful registration
-      setSuccess(true);
       reset();
-      
-      // Always go to dashboard in development
-      navigate('/', { replace: true });
+
+      // Navigate to login so the user can sign in
+      navigate('/login', { replace: true });
 
     } catch (error) {
       let errorMessage = 'Registration failed. Please try again.';
@@ -209,9 +199,9 @@ export default function Register() {
                 }}
               >
                 <span>
-                  {fileName || 'Upload ID (JPG/PNG/PDF)'}
+                  Upload ID (JPG/PNG/PDF)
                 </span>
-                {fileName && (
+                {watch('idDocument')?.[0] && (
                   <Typography variant="caption" sx={{ ml: 1 }}>
                     {(watch('idDocument')?.[0]?.size / (1024 * 1024)).toFixed(2)}MB
                   </Typography>

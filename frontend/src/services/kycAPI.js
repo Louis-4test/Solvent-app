@@ -1,29 +1,19 @@
-import axios from 'axios';
+import api from './api';
 
-const API_URL = 'http://localhost:3000/api/kyc';
-
-const uploadKYC = async (formData) => {  
-  try {
-    const token = localStorage.getItem('token');
-    if (!token) throw new Error('No authentication token found');
-
-    const response = await axios.post(`${API_URL}/upload`, formData, {
+export default {
+  uploadKYC: async (formData) => {
+    const response = await api.post('/kyc/upload', formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
-        'Authorization': `Bearer ${token}`
+        'Content-Type': 'multipart/form-data'
       },
       timeout: 10000
     });
 
     return response.data;
-  } catch (error) {
-    console.error('Upload failed:', {
-      status: error.response?.status,
-      data: error.response?.data,
-      message: error.message
-    });
-    throw error;
+  },
+
+  getKYCStatus: async () => {
+    const response = await api.get('/kyc/status');
+    return response.data;
   }
 };
-
-export default uploadKYC;

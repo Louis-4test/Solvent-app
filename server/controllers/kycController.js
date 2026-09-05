@@ -1,12 +1,37 @@
 // controllers/kycController.js
 import { User, KYC } from '../models/index.js';
-import path from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
+import { createNotificationForUser } from './notificationController.js';
 
-// Get directory name for ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+export async function getKYCStatus(req, res) {
+  try {
+    const user = await User.findByPk(req.user.id, {
+      attributes: ['id', 'fullName', 'kycVerified', 'kycVerifiedAt']
+    });
+
+    const submissions = await KYC.findAll({
+      where: { userId: req.user.id },
+      order: [['createdAt', 'DESC']],
+      attributes: ['id', 'documentType', 'originalName', 'status', 'verifiedAt', 'createdAt']
+    });
+
+    return res.json({
+      success: true,
+      data: {
+        verified: user.kycVerified,
+        verifiedAt: user.kycVerifiedAt,
+        submissions
+      }
+    });
+  } catch (error) {
+    console.error('KYC status error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to fetch KYC status',
+      code: 'KYC_STATUS_FAILED'
+    });
+  }
+}
 
 export async function uploadKYCDocument(req, res) {
   try {
@@ -96,6 +121,11 @@ async function startVerificationProcess(userId, kyc) {
     }, { 
       where: { id: userId } 
     });
+
+    await createNotificationForUser(
+      userId,
+      'Your KYC documents have been verified. Your account is now fully verified.'
+    );
 
     console.log(`KYC verified for user ${userId}`);
   } catch (error) {

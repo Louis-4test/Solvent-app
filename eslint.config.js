@@ -3,10 +3,18 @@ import reactPlugin from 'eslint-plugin-react';
 
 export default [
   js.configs.recommended,
+  {
+    rules: {
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    },
+  },
+  {
+    ignores: ['frontend/dist/**', '**/node_modules/**'],
+  },
 
   // Node backend config
   {
-    files: ['server/**/*.js'],
+    files: ['server/**/*.js', 'server/**/*.cjs'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
@@ -16,6 +24,13 @@ export default [
         module: 'readonly',
         console: 'readonly',
         __dirname: 'readonly',
+        __filename: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        Buffer: 'readonly',
+        global: 'readonly',
       },
     },
   },
@@ -37,13 +52,28 @@ export default [
         console: 'readonly',
         FormData: 'readonly',
         fetch: 'readonly',
+        localStorage: 'readonly',
+        location: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        alert: 'readonly',
+        navigator: 'readonly',
       },
     },
     plugins: {
       react: reactPlugin,
     },
+    settings: {
+      react: {
+        version: 'detect',
+      },
+    },
     rules: {
       ...reactPlugin.configs.recommended.rules,
+      'react/react-in-jsx-scope': 'off',
+      'react/jsx-uses-react': 'off',
     },
   },
 ];

@@ -4,9 +4,13 @@ import {
   sendMFACode,
   verifyMFA,
   login,
-  verifyLoginMFA
+  verifyLoginMFA,
+  getMe,
+  forgotPassword,
+  resetPassword,
+  changePassword
 } from '../controllers/authController.js';
-import authMiddleware from '../middleware/auth.js';
+import { auth } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -20,5 +24,13 @@ router.post('/verify-mfa', verifyMFA);
 // Authentication routes
 router.post('/login', login);
 router.post('/verify-login-mfa', verifyLoginMFA);
+
+// Password management
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
+router.post('/change-password', auth, changePassword);
+
+// Current user (protected)
+router.get('/me', auth, getMe);
 
 export default router;

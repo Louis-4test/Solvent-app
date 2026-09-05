@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button, TextField, Typography, Box, Alert, CircularProgress } from '@mui/material';
 import { useState } from 'react';
 import authAPI from '../../services/authAPI';
+import { saveAuth } from '../../utils/auth';
 
 export default function Login() {
   const { register, handleSubmit, formState: { errors } } = useForm();
@@ -12,7 +13,6 @@ export default function Login() {
   const [mfaRequired, setMfaRequired] = useState(false);
   const [tempToken, setTempToken] = useState('');
   const [email, setEmail] = useState('');
-  const [unverifiedEmail, setUnverifiedEmail] = useState('');
 
   const onSubmit = async (data) => {
     console.log('Submitting login with:', { 
@@ -37,13 +37,22 @@ export default function Login() {
       }
     } catch (error) {
       let errorMessage = 'Login failed. Please try again.';
-      
-      if (error.code === 'INVALID_CREDENTIALS') {
-        errorMessage = error.message || 'Invalid email/phone or password';
-      } else if (error.status === 401) {
-        errorMessage = 'Authentication failed. Please check your credentials.';
+
+      switch (error.code || error.status) {
+        case 'INVALID_CREDENTIALS':
+        case 401:
+          errorMessage = error.message || 'Invalid email/phone or password';
+          break;
+        case 'UNVERIFIED_ACCOUNT':
+          errorMessage = 'Account not verified. Please check your email.';
+          break;
+        case 'EMAIL_FAILURE':
+          errorMessage = 'Failed to send verification email. Please try again later.';
+          break;
+        default:
+          errorMessage = error.message || errorMessage;
       }
-      
+
       setError(errorMessage);
       console.error('Login error:', {
         message: error.message,
@@ -56,31 +65,8 @@ export default function Login() {
   };
 
   const handleLoginSuccess = (response) => {
-    localStorage.setItem('token', response.token);
-    localStorage.setItem('user', JSON.stringify(response.user));
+    saveAuth(response.token, response.user);
     navigate('/', { replace: true });
-  };
-
-  const handleLoginError = (error) => {
-    let errorMessage = 'Login failed. Please try again.';
-    
-    switch (error.code) {
-      case 'INVALID_CREDENTIALS':
-        errorMessage = 'Invalid email/phone or password';
-        break;
-      case 'UNVERIFIED_ACCOUNT':
-        errorMessage = 'Account not verified. Please check your email.';
-        setUnverifiedEmail(error.response?.data?.email || '');
-        break;
-      case 'EMAIL_FAILURE':
-        errorMessage = 'Failed to send verification email. Please try again later.';
-        break;
-      default:
-        errorMessage = error.message || errorMessage;
-    }
-
-    setError(errorMessage);
-    console.error('Login error:', error);
   };
 
   const handleMFAVerify = async (mfaCode) => {
@@ -92,18 +78,6 @@ export default function Login() {
       handleLoginSuccess(response);
     } catch (error) {
       setError(error.message || 'Invalid verification code');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResendVerification = async () => {
-    try {
-      setLoading(true);
-      await authAPI.sendVerificationEmail(unverifiedEmail);
-      setError('Verification email resent. Please check your inbox.');
-    } catch (error) {
-      setError('Failed to resend verification email.');
     } finally {
       setLoading(false);
     }
@@ -136,7 +110,7 @@ export default function Login() {
           </Typography>
           
           <Typography sx={{ mb: 3, textAlign: 'center' }}>
-            We've sent a 6-digit code to {email ? `your email (${email})` : 'your registered email'}. 
+            We have sent a 6-digit code to {email ? `your email (${email})` : 'your registered email'}. 
             Please enter it below.
           </Typography>
           
@@ -277,7 +251,7 @@ export default function Login() {
           </Button>
 
           <Typography variant="body2" sx={{ textAlign: 'center' }}>
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Button 
               onClick={() => navigate('/register')} 
               sx={{ textTransform: 'none' }}

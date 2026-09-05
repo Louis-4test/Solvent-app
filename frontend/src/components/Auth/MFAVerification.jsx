@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Box, Button, TextField, Typography, Alert } from '@mui/material';
 import authAPI from '../../services/authAPI';
+import { saveAuth } from '../../utils/auth';
 
 export default function MFAVerification() {
   const [code, setCode] = useState('');
@@ -15,17 +16,17 @@ export default function MFAVerification() {
     try {
       setLoading(true);
       setError('');
-      
+
       const response = await authAPI.verifyMFA(email, code);
-      
-      // Store token in localStorage or context
-      localStorage.setItem('token', response.token);
-      
+
+      // Store token in localStorage
+      saveAuth(response.token, response.user);
+
       // Navigate to dashboard
-      navigate('/dashboard');
+      navigate('/');
     } catch (error) {
       console.error('MFA verification failed:', error);
-      setError(error.response?.data?.error || 'Verification failed. Please try again.');
+      setError(error.response?.data?.error || error.message || 'Verification failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -37,7 +38,7 @@ export default function MFAVerification() {
         Verify Your Identity
       </Typography>
       <Typography sx={{ mb: 3 }}>
-        We've sent a 6-digit code to your email. Please enter it below.
+        We have sent a 6-digit code to your email. Please enter it below.
       </Typography>
       
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}

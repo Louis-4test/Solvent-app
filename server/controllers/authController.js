@@ -1,15 +1,13 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { Op } from 'sequelize';
 import { User } from '../models/index.js';
 import emailService from '../services/emailService.js';
 import { generateToken, generateTempToken } from '../utils/helpers.js';
-import { token } from 'morgan';
 
 // Constants
 const MFA_CODE_EXPIRATION_MINUTES = 55;
-const TOKEN_EXPIRATION = '24h';
-const TEMP_TOKEN_EXPIRATION = '15m';
 
 // Helper to generate and save MFA code
 const generateAndSaveMFACode = async (user) => {
@@ -64,15 +62,26 @@ export const register = async (req, res) => {
       isVerified: process.env.NODE_ENV === 'development',
     });
 
-    // Generate MFA code for verification
-    const mfaCode = await generateAndSaveMFACode(user);
-    
-     // Skip email verification in development
-     if (process.env.NODE_ENV !== 'development') {
-      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-      console.log(`[PROD] Would send verification email to ${email}`);
+    // Generate verification code and persist it for the verify step
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    await user.update({
+      mfaCode: verificationCode,
+      mfaCodeExpires: new Date(Date.now() + MFA_CODE_EXPIRATION_MINUTES * 60 * 1000)
+    });
+
+    // In development, skip sending the email (code is printed to the console)
+    if (process.env.NODE_ENV !== 'development') {
+      try {
+        await emailService.sendEmail({
+          to: user.email,
+          subject: 'Verify your Solvent account',
+          text: `Your verification code is: ${verificationCode} (expires in ${MFA_CODE_EXPIRATION_MINUTES} minutes)`
+        });
+      } catch (emailError) {
+        console.error('Verification email failed:', emailError.message);
+      }
     } else {
-      console.log('[DEV] Skipping email verification');
+      console.log(`[DEV] Registration complete. Verification code would be sent to ${user.email}`);
     }
 
      // Generate JWT token (using consistent variable name)
@@ -119,6 +128,34 @@ export const register = async (req, res) => {
   }
 };
 
+export const getMe = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id, {
+      attributes: { exclude: ['password', 'mfaCode', 'mfaCodeExpires', 'resetPasswordToken', 'resetPasswordExpires'] }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found',
+        code: 'USER_NOT_FOUND'
+      });
+    }
+
+    return res.json({
+      success: true,
+      user
+    });
+  } catch (error) {
+    console.error('Get current user error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to fetch user',
+      code: 'SERVER_ERROR'
+    });
+  }
+};
+
 export const login = async (req, res) => {
   try {
     const { identifier, password } = req.body;
@@ -154,14 +191,8 @@ export const login = async (req, res) => {
       });
     }
 
-    // Add this right before bcrypt.compare
-    console.log('Login attempt for:', identifier);
-    console.log('Input password:', password);
-    console.log('Stored hash:', user.password);
-    
     // Verify password with timing-safe comparison
     const passwordMatch = await bcrypt.compare(password, user.password);
-    console.log('Password match result:', passwordMatch);
 
     if (!passwordMatch) {
       return res.status(401).json({
@@ -179,6 +210,7 @@ export const login = async (req, res) => {
         success: false,
         error: 'Account not verified. Please check your email.',
         code: 'UNVERIFIED_ACCOUNT',
+        email: user.email,
         resendLink: true
       });
     }
@@ -442,6 +474,167 @@ export const verifyMFA = async (req, res) => {
       success: false,
       error: 'MFA verification failed',
       code: 'MFA_VERIFICATION_FAILED'
+    });
+  }
+};
+
+const hashResetToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
+
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email is required',
+        code: 'MISSING_EMAIL'
+      });
+    }
+
+    const user = await User.findOne({ where: { email } });
+
+    // Always respond the same way to avoid user enumeration
+    if (!user) {
+      return res.json({
+        success: true,
+        message: 'If that email exists, a password reset link has been sent.'
+      });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    await user.update({
+      resetPasswordToken: hashResetToken(resetToken),
+      resetPasswordExpires: new Date(Date.now() + 60 * 60 * 1000) // 1 hour
+    });
+
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
+
+    await emailService.sendEmail({
+      to: user.email,
+      subject: 'Reset your Solvent password',
+      text: `We received a request to reset your password.\n\nClick the link below to choose a new password (valid for 1 hour):\n${resetUrl}\n\nIf you did not request this, you can safely ignore this email.`
+    });
+
+    return res.json({
+      success: true,
+      message: 'If that email exists, a password reset link has been sent.'
+    });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to send password reset email',
+      code: 'RESET_EMAIL_FAILED'
+    });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        error: 'Token and new password are required',
+        code: 'MISSING_RESET_DATA'
+      });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        success: false,
+        error: 'Password must be at least 8 characters',
+        code: 'WEAK_PASSWORD'
+      });
+    }
+
+    const user = await User.findOne({
+      where: { resetPasswordToken: hashResetToken(token) }
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid or expired reset link',
+        code: 'INVALID_RESET_TOKEN'
+      });
+    }
+
+    if (!user.resetPasswordExpires || new Date() > user.resetPasswordExpires) {
+      return res.status(400).json({
+        success: false,
+        error: 'Reset link has expired. Please request a new one.',
+        code: 'EXPIRED_RESET_TOKEN'
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await user.update({
+      password: hashedPassword,
+      resetPasswordToken: null,
+      resetPasswordExpires: null
+    });
+
+    return res.json({
+      success: true,
+      message: 'Password reset successful. You can now log in.'
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to reset password',
+      code: 'RESET_FAILED'
+    });
+  }
+};
+
+export const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        error: 'Current and new password are required',
+        code: 'MISSING_PASSWORD_DATA'
+      });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        success: false,
+        error: 'New password must be at least 8 characters',
+        code: 'WEAK_PASSWORD'
+      });
+    }
+
+    const user = await User.findByPk(req.user.id);
+    const passwordMatch = await bcrypt.compare(currentPassword, user.password);
+
+    if (!passwordMatch) {
+      return res.status(401).json({
+        success: false,
+        error: 'Current password is incorrect',
+        code: 'INVALID_CURRENT_PASSWORD'
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await user.update({ password: hashedPassword });
+
+    return res.json({
+      success: true,
+      message: 'Password changed successfully.'
+    });
+  } catch (error) {
+    console.error('Change password error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to change password',
+      code: 'CHANGE_PASSWORD_FAILED'
     });
   }
 };

@@ -1,10 +1,11 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import routes from './routes/index.js';
-import kycRoutes from './routes/kycRoutes.js'; 
-import multer from 'multer';
+import { securityHeaders } from './middleware/securityHeaders.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,17 +13,29 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, 'uploads/kyc/'));
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
-  }
-});
+// Security middleware
+app.disable('x-powered-by');
+app.use(helmet({ contentSecurityPolicy: false }));
+app.use(securityHeaders);
 
-const upload = multer({ storage });
+// Global API rate limit
+app.use('/api', rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Too many requests, please try again later.' }
+}));
+
+// Strict rate limit for authentication endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Too many login attempts, please try again later.' }
+});
+app.use(['/api/auth/login', '/api/auth/register', '/api/auth/verify-login-mfa', '/api/auth/forgot-password'], authLimiter);
 
 // Middleware
 app.use(cors({
@@ -57,22 +70,36 @@ app.get('/api-docs', (req, res) => {
       auth: {
         register: 'POST /api/auth/register',
         login: 'POST /api/auth/login',
+        me: 'GET /api/auth/me',
+        changePassword: 'POST /api/auth/change-password',
         mfa: {
           send: 'POST /api/auth/send-mfa',
           verify: 'POST /api/auth/verify-mfa'
+        },
+        password: {
+          forgot: 'POST /api/auth/forgot-password',
+          reset: 'POST /api/auth/reset-password'
         }
       },
       kyc: {
-        upload: 'POST /api/kyc/upload'
+        upload: 'POST /api/kyc/upload',
+        status: 'GET /api/kyc/status'
       },
-      users: 'GET /api/users'
+      transactions: {
+        transfer: 'POST /api/transactions/transfer',
+        mine: 'GET /api/transactions/me'
+      },
+      payments: {
+        initiate: 'POST /api/payments',
+        history: 'GET /api/payments/history'
+      },
+      notifications: 'GET /api/notifications'
     }
   });
 });
 
 // API Routes
 app.use('/api', routes);
-app.use('/api/kyc', kycRoutes); // Explicitly mount KYC routes
 
 // Health Check
 app.get('/health', (req, res) => {
@@ -112,7 +139,7 @@ app.use((req, res) => {
 });
 
 // Error handling middleware
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   console.error('API Error:', err.stack || err);
   res.status(err.status || 500).json({
     error: process.env.NODE_ENV === 'development' ? err.message : 'Internal Server Error',
