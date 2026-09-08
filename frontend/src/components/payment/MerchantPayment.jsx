@@ -1,114 +1,109 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import Sidebar, { TopNavbar } from "../Layout/Sidebar";
+import { payMerchant } from "../../services/paymentAPI";
 import "./MerchantPayment.css";
 
 const MerchantPayment = () => {
+  const navigate = useNavigate();
+  const [amount, setAmount] = useState("");
+  const [merchant, setMerchant] = useState("Merchant");
+  const [paymentMethod, setPaymentMethod] = useState("mobile_money");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [qrScanned, setQrScanned] = useState(false);
+
+  const handlePay = async (e) => {
+    e.preventDefault();
+    setError("");
+    setMessage("");
+
+    if (!amount || Number(amount) <= 0) {
+      setError("Please enter a valid amount.");
+      return;
+    }
+    if (!qrScanned) {
+      setError("Please scan the merchant QR code first.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const res = await payMerchant({ amount, merchant, payment_method: paymentMethod });
+      setMessage(res.message || "Merchant payment successful.");
+      setAmount("");
+    } catch (err) {
+      setError(err.message || "Payment failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="container">
-      {/* Sidebar */}
-      <div className="sidebar">
-        <h2>SOLVENT</h2>
-        <div className="nav-links">
-          <Link to="/">🏠 Home</Link>
-          <Link to="/transactions">💳 Transactions</Link>
-          <Link to="/./transfer/bank-to-momo">💰 Fund Transfer</Link>
-          <Link to="/./billpayment">📄 Bill Payment</Link>
-          <Link to="/merchant-payment" className="active">🏪 Merchant Payment</Link>
-          <Link to="/notifications">🔔 Notifications</Link>
-          <Link to="/settings">⚙️ Settings</Link>
-          <Link to="/logout">🚪 Logout</Link>
-        </div>
-      </div>
+      <Sidebar />
 
       {/* Main Content */}
       <div className="main-content">
-        {/* Navbar */}
-        <div className="navbar">
-          <h1>Merchant Pay</h1>
-          <div className="user-info">
-            <span className="card">🛒</span>
-            <img src="https://via.placeholder.com/40" alt="User" />
-          </div>
-        </div>
+        <TopNavbar title="Merchant Pay" />
 
         <div className="merchant-container">
           {/* Left Side: Payment Methods */}
-          <div className="merchant-box">
+          <form className="merchant-box" onSubmit={handlePay}>
             <div className="merchant-tabs">
               <span className="active-tab">Merchant Pay</span>
-              <span>Bill Payment</span>
+              <Link to="/bill-payment">
+                <span>Bill Payment</span>
+              </Link>
             </div>
 
-            <div className="payment-method">
-              <span>Orange Money</span>
-              <img src="/orange.png" alt="OM" />
-              <span>***4342</span>
-            </div>
+            <label>Merchant</label>
+            <input
+              type="text"
+              value={merchant}
+              onChange={(e) => setMerchant(e.target.value)}
+              placeholder="Merchant name"
+            />
 
-            <div className="payment-method">
-              <span>Mobile Money</span>
-              <img src="/mtn.png" alt="MTN" />
-              <span>***2414</span>
-            </div>
+            <label>Amount (XAF)</label>
+            <input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="Enter amount"
+            />
 
-            <div className="payment-method">
-              <span>Wallets Pay</span>
-              <img src="/wallet.png" alt="Wallet" />
-              <span>***0473</span>
-            </div>
+            <label>Payment Method</label>
+            <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
+              <option value="mobile_money">Mobile Money</option>
+              <option value="bank_transfer">Pay by Bank</option>
+              <option value="card">Card</option>
+            </select>
 
-            <div className="payment-method">
-              <span>Pay by Bank</span>
-              <img src="/bank.png" alt="Bank" />
-              <span>***0786</span>
-            </div>
+            {error && <p className="form-error" style={{ color: "red", marginTop: 10 }}>{error}</p>}
+            {message && <p className="form-success" style={{ color: "green", marginTop: 10 }}>{message}</p>}
 
             <div className="button-group">
-              <button className="back-btn">← Back</button>
-              <button className="pay-btn">PAY</button>
+              <button type="button" className="back-btn" onClick={() => navigate("/")}>{"\u2190"} Back</button>
+              <button type="submit" className="pay-btn" disabled={loading}>
+                {loading ? "Processing..." : "PAY"}
+              </button>
             </div>
-
-            {/* Recent Transactions */}
-            <div className="recent-transactions">
-              <h2 className="transactions-title">Recent Transactions</h2>
-              <table className="transactions-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Type</th>
-                    <th>Date</th>
-                    <th>Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>Mobile Money</td>
-                    <td>Food</td>
-                    <td>March 08, 2025</td>
-                    <td>XAF 6500</td>
-                  </tr>
-                  <tr>
-                    <td>Bank Transfer</td>
-                    <td>Bank to Momo</td>
-                    <td>March 07, 2025</td>
-                    <td>XAF 45000</td>
-                  </tr>
-                  <tr>
-                    <td>Bill Payment</td>
-                    <td>Electric Bill</td>
-                    <td>March 04, 2025</td>
-                    <td>XAF 23000</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+          </form>
 
           {/* Right Side: QR + Review */}
           <div className="merchant-sidebar">
             <div className="qr-box">
               <h4>Pay by Phone?<br />Scan QR Code</h4>
-              <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=merchant123" alt="QR Code" />
+              <img
+                src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=merchant123"
+                alt="QR Code"
+                onClick={() => setQrScanned(true)}
+                style={{ cursor: "pointer", border: qrScanned ? "3px solid green" : "3px solid transparent" }}
+                title="Click to simulate scanning"
+              />
+              {qrScanned && <p style={{ color: "green", marginTop: 8 }}>QR code scanned!</p>}
             </div>
 
             <div className="review-box">
@@ -116,7 +111,7 @@ const MerchantPayment = () => {
               <textarea placeholder="Leave a comment..." />
               <div className="rating">
                 Rate:
-                <span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span>
+                <span>{"\u2B50"}</span><span>{"\u2B50"}</span><span>{"\u2B50"}</span><span>{"\u2B50"}</span><span>{"\u{2606}"}</span>
               </div>
             </div>
           </div>

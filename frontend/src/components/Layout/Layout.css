@@ -1,0 +1,79 @@
+.sidebar {
+  width: 250px;
+  padding: 20px;
+  background-color: #1A273C;
+  color: white;
+  min-height: 100vh;
+  flex-shrink: 0;
+}
+
+.sidebar .logo {
+  text-align: center;
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.nav-links {
+  margin-top: 20px;
+}
+
+.nav-links a {
+  display: block;
+  color: white;
+  text-decoration: none;
+  padding: 10px;
+  margin-bottom: 8px;
+  border-radius: 5px;
+  transition: background 0.3s;
+}
+
+.nav-links a:hover {
+  background: #374151;
+}
+
+.nav-links .active {
+  font-weight: bold;
+  background: #2563eb;
+}
+
+.nav-links .logout {
+  color: #f87171;
+  cursor: pointer;
+}
+
+.main-content {
+  flex: 1;
+  padding: 20px;
+  min-width: 0;
+}
+
+.container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.navbar h1 {
+  font-size: 24px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+}
+
+.user-info .card {
+  margin-right: 10px;
+  font-size: 20px;
+}
+
+.user-name {
+  font-weight: 500;
+}

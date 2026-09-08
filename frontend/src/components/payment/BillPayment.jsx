@@ -1,125 +1,118 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import Sidebar, { TopNavbar } from "../Layout/Sidebar";
+import { payBill } from "../../services/paymentAPI";
 import "./BillPayment.css";
 
+const SERVICES = ["Electricity", "Water", "Airtime", "Internet", "TV"];
+
 const BillPayment = () => {
+  const navigate = useNavigate();
+  const [service, setService] = useState(SERVICES[0]);
+  const [amount, setAmount] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handlePay = async (e) => {
+    e.preventDefault();
+    setError("");
+    setMessage("");
+
+    if (!amount || Number(amount) <= 0) {
+      setError("Please enter a valid amount.");
+      return;
+    }
+    if (!accountNumber) {
+      setError("Please enter your account/customer number.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const res = await payBill({ amount, service, accountNumber });
+      setMessage(res.message || "Payment completed successfully.");
+      setAmount("");
+      setAccountNumber("");
+    } catch (err) {
+      setError(err.message || "Payment failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="container">
-      {/* Sidebar */}
-      <div className="sidebar">
-        <h2>SOLVENT</h2>
-        <div className="nav-links">
-          <Link to="/">🏠 Home</Link>
-          <Link to="/transactions">💳 Transactions</Link>
-          <Link to="/./transfer/bank-to-momo">💰 Fund Transfer</Link>
-          <Link to="/bill-payment" className="active">📄 Bill Payment</Link>
-          <Link to="/merchant-payment">🏪 Merchant Payment</Link>
-          <Link to="/notifications">🔔 Notifications</Link>
-          <Link to="/settings">⚙️ Settings</Link>
-          <Link to="/logout">🚪 Logout</Link>
-        </div>
-      </div>
+      <Sidebar />
 
       {/* Main Content */}
       <div className="main-content">
-        {/* Top Navbar */}
-        <div className="navbar">
-          <h1>Bill Payment</h1>
-          <div className="user-info">
-            <span className="card">🛒</span>
-            <img src="https://via.placeholder.com/40" alt="User" />
-          </div>
-        </div>
+        <TopNavbar title="Bill Payment" />
 
         {/* Bill Payment Section */}
         <div className="bill-payment-container">
-          <div className="bill-form">
+          <form className="bill-form" onSubmit={handlePay}>
             <div className="form-tabs">
               <span className="active-tab">Bill Payment</span>
-              <span>Merchant Pay</span>
+              <Link to="/merchant-payment">
+                <span>Merchant Pay</span>
+              </Link>
             </div>
 
             <label>Service</label>
-            <select>
-              <option>Electricity</option>
+            <select value={service} onChange={(e) => setService(e.target.value)}>
+              {SERVICES.map((s) => <option key={s}>{s}</option>)}
             </select>
 
-            <label>Amount</label>
+            <label>Amount (XAF)</label>
             <div className="input-group">
-              <input type="number" value="8000" readOnly />
-              <div className="provider">
-                <img src="/om-logo.png" alt="OM" />
-                <span>OM</span>
-              </div>
+              <input
+                type="number"
+                placeholder="Enter Amount"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
             </div>
 
-            <label>Bank/Momo/Wallet Number</label>
+            <label>{service} Account / Meter Number</label>
             <div className="input-group">
-              <input type="text" value="12345678" readOnly />
-              <div className="provider">
-                <img src="/mtn-logo.png" alt="MTN" />
-                <span>MOMO</span>
-              </div>
+              <input
+                type="text"
+                placeholder={"Enter your " + service.toLowerCase() + " account"}
+                value={accountNumber}
+                onChange={(e) => setAccountNumber(e.target.value)}
+              />
             </div>
+
+            {error && <p className="form-error" style={{ color: "red", marginTop: 10 }}>{error}</p>}
+            {message && <p className="form-success" style={{ color: "green", marginTop: 10 }}>{message}</p>}
 
             <div className="form-actions">
-              <button className="back">Back</button>
-              <button className="pay">PAY</button>
+              <button type="button" className="back" onClick={() => navigate("/")}>Back</button>
+              <button type="submit" className="pay" disabled={loading}>
+                {loading ? "Processing..." : "PAY"}
+              </button>
             </div>
-          </div>
-
-          {/* Recent Transactions */}
-          <div className="recent-transactions">
-              <h2 className="transactions-title">Recent Transactions</h2>
-              <table className="transactions-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Type</th>
-                    <th>Date</th>
-                    <th>Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>Mobile Money</td>
-                    <td>Food</td>
-                    <td>March 08, 2025</td>
-                    <td>XAF 6500</td>
-                  </tr>
-                  <tr>
-                    <td>Bank Transfer</td>
-                    <td>Bank to Momo</td>
-                    <td>March 07, 2025</td>
-                    <td>XAF 45000</td>
-                  </tr>
-                  <tr>
-                    <td>Bill Payment</td>
-                    <td>Electric Bill</td>
-                    <td>March 04, 2025</td>
-                    <td>XAF 23000</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+          </form>
 
           {/* Right Side Actions */}
           <div className="side-actions">
             <div className="box">
               <h4>Transfer</h4>
-              <button>Bank to Momo</button>
-              <button>Momo to Bank</button>
+              <Link to="/transfer/bank-to-momo"><button>Bank to Momo</button></Link>
+              <Link to="/transfer/momo-to-bank"><button>Momo to Bank</button></Link>
             </div>
 
             <div className="box">
-              <button>Buy Airtime</button>
-              <button>Pay Bill</button>
+              <Link to="/transfer/airtime"><button>Buy Airtime</button></Link>
+              <Link to="/bill-payment"><button>Pay Bill</button></Link>
             </div>
 
             <div className="box">
               <p>Review:</p>
               <textarea placeholder="Write your review..." rows="3"></textarea>
-              <p>Rate: ⭐⭐⭐☆☆</p>
+              <p>Rate: {"\u2B50\u2B50\u2B50\u2B50\u{2606}"}</p>
             </div>
           </div>
         </div>

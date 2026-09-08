@@ -1,13 +1,33 @@
-import axios from "axios";
+import api from './api';
 
-const API_BASE_URL = "https://your-api-url.com";
+export const transferFunds = async ({ recipientPhone, amount, channel = 'p2p', narration = '' }) => {
+  const response = await api.post('/transactions/transfer', {
+    recipientPhone,
+    amount,
+    channel,
+    narration
+  });
+  return response.data;
+};
 
-export const transferFunds = async (data) => {
-  try {
-    const response = await axios.post(`${API_BASE_URL}/transfer`, data);
-    return response.data;
-  } catch (error) {
-    console.error("Transfer Error:", error);
-    throw error;
-  }
+export const getMyTransactions = async () => {
+  const response = await api.get('/transactions/me');
+  return response.data;
+};
+
+export const getTransactionById = async (id) => {
+  const response = await api.get(`/transactions/${id}`);
+  return response.data;
+};
+
+export const getBalance = async () => {
+  const response = await api.get('/auth/me');
+  return response.data.user;
+};
+
+export default {
+  transferFunds,
+  getMyTransactions,
+  getTransactionById,
+  getBalance
 };

@@ -1,64 +1,110 @@
-import React, { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import Sidebar, { TopNavbar } from "../Layout/Sidebar";
+import { transferFunds, getMyTransactions } from "../../services/transferAPI";
 import "./Transfer.css";
 
-const Transfer = () => {
-  const { type } = useParams(); // Get transfer type from URL params
-  const [amount, setAmount] = useState("");
+const CHANNEL_LABELS = {
+  "bank-to-momo": "Bank to Momo",
+  "momo-to-bank": "Momo to Bank",
+  p2p: "Solvent to Solvent"
+};
 
-  const handleTransfer = (e) => {
+const Transfer = () => {
+  const { type = "bank-to-momo" } = useParams();
+  const navigate = useNavigate();
+  const [amount, setAmount] = useState("");
+  const [recipientPhone, setRecipientPhone] = useState("");
+  const [narration, setNarration] = useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [recentTransactions, setRecentTransactions] = useState([]);
+
+  useEffect(() => {
+    getMyTransactions()
+      .then((res) => {
+        if (res.success) setRecentTransactions(res.data);
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleTransfer = async (e) => {
     e.preventDefault();
-    alert(`Transferred ${amount} XAF via ${type}`);
+    setError("");
+    setMessage("");
+
+    if (!amount || Number(amount) <= 0) {
+      setError("Please enter a valid amount.");
+      return;
+    }
+    if (!recipientPhone) {
+      setError("Please enter the recipient's phone number.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const res = await transferFunds({
+        recipientPhone,
+        amount,
+        channel: type,
+        narration
+      });
+      setMessage(res.message || "Transfer completed successfully.");
+      setAmount("");
+      setRecipientPhone("");
+      setNarration("");
+
+      const txns = await getMyTransactions();
+      if (txns.success) setRecentTransactions(txns.data);
+    } catch (err) {
+      setError(err.message || "Transfer failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const formatAmount = (value) => `XAF ${Number(value).toLocaleString()}`;
 
   return (
     <div className="container">
-      {/* Sidebar */}
-      <div className="sidebar">
-        <h2>SOLVENT</h2>
-        <div className="nav-links">
-          <Link to="/">🏠 Home</Link>
-          <Link to="/./transactions">💳 Transactions</Link>
-          <Link to="/fund-transfer" className="active">💰 Fund Transfer</Link>
-          <Link to="/billPayment">📄 Bill Payment</Link>
-          <Link to="/merchant-payment">🏪 Merchant Payment</Link>
-          <Link to="/notifications">🔔 Notifications</Link>
-          <Link to="/settings">⚙️ Settings</Link>
-          <Link to="/logout">🚪 Logout</Link>
-        </div>
-      </div>
+      <Sidebar />
 
       {/* Main Content */}
       <div className="main-content">
-        {/* Top Navbar */}
-        <div className="navbar">
-          <h1>Fund Transfer</h1>
-          <div className="user-info">
-            <span className="card">💰</span>
-            <img src="https://via.placeholder.com/40" alt="User" />
-          </div>
-        </div>
+        <TopNavbar title="Fund Transfer" />
 
         {/* Fund Transfer Section */}
         <div className="transfer-container">
           <div className="transfer-card">
             <div className="transfer-form">
               <div className="form-tabs">
-                <Link to="/transfer/bank-to-momo">
-                  <button>Fund Transfer</button>
-                </Link>
-                <Link to="./payment/MerchantPayment">
-                  <button>Merchant Pay</button>
+                <span className="active-tab">Fund Transfer</span>
+                <Link to="/merchant-payment">
+                  <span>Merchant Pay</span>
                 </Link>
               </div>
 
               <label>Transfer Type</label>
-              <select value={type} enable>
-                <option value="bank-to-momo">Bank to Momo</option>
-                <option value="momo-to-bank">Momo to Bank</option>
+              <select
+                value={type}
+                onChange={(e) => navigate(`/transfer/${e.target.value}`)}
+              >
+                {Object.entries(CHANNEL_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
               </select>
 
-              <label>Amount</label>
+              <label>Recipient Phone Number</label>
+              <input
+                type="text"
+                placeholder="6XXXXXXX"
+                value={recipientPhone}
+                onChange={(e) => setRecipientPhone(e.target.value)}
+              />
+
+              <label>Amount ({CHANNEL_LABELS[type] || type})</label>
               <input
                 type="number"
                 placeholder="Enter Amount"
@@ -66,12 +112,23 @@ const Transfer = () => {
                 onChange={(e) => setAmount(e.target.value)}
               />
 
+              <label>Narration (optional)</label>
+              <input
+                type="text"
+                placeholder="What is this transfer for?"
+                value={narration}
+                onChange={(e) => setNarration(e.target.value)}
+              />
+
+              {error && <p className="form-error">{error}</p>}
+              {message && <p className="form-success">{message}</p>}
+
               <div className="form-actions">
                 <button className="back">
-                  <Link to="/">⬅️ Back</Link>
+                  <Link to="/">{"\u2B05\uFE0F"} Back</Link>
                 </button>
-                <button className="transfer-button" onClick={handleTransfer}>
-                  Transfer
+                <button className="transfer-button" onClick={handleTransfer} disabled={loading}>
+                  {loading ? "Processing..." : "Transfer"}
                 </button>
               </div>
 
@@ -88,28 +145,20 @@ const Transfer = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
-                      <td>Mobile Money</td>
-                      <td>Food</td>
-                      <td>March 08, 2025</td>
-                      <td>XAF 6500</td>
-                    </tr>
-                    <tr>
-                      <td>Bank Transfer</td>
-                      <td>Bank to Momo</td>
-                      <td>March 07, 2025</td>
-                      <td>XAF 45000</td>
-                    </tr>
-                    <tr>
-                      <td>Bill Payment</td>
-                      <td>Electric Bill</td>
-                      <td>March 04, 2025</td>
-                      <td>XAF 23000</td>
-                    </tr>
+                    {recentTransactions.length === 0 && (
+                      <tr><td colSpan="4">No transactions yet.</td></tr>
+                    )}
+                    {recentTransactions.slice(0, 4).map((tx) => (
+                      <tr key={tx.id}>
+                        <td>{tx.Recipient?.fullName || tx.Recipient?.phone || "Recipient"}</td>
+                        <td>{tx.narration || "Transfer"}</td>
+                        <td>{new Date(tx.created_at || tx.createdAt).toLocaleDateString()}</td>
+                        <td>{formatAmount(tx.amount)}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
-
             </div>
 
             {/* Right Side Actions */}
@@ -129,7 +178,7 @@ const Transfer = () => {
                 <Link to="/transfer/airtime">
                   <button>Buy Airtime</button>
                 </Link>
-                <Link to="./payment/BillPayment">
+                <Link to="/bill-payment">
                   <button>Pay Bill</button>
                 </Link>
               </div>
@@ -137,7 +186,7 @@ const Transfer = () => {
               <div className="quick-actions">
                 <p className="quick-actions-title">Review:</p>
                 <textarea placeholder="Write your review..." rows="5"></textarea>
-                <p className="quick-actions-title">Rate: ⭐⭐⭐☆☆</p>
+                <p className="quick-actions-title">Rate: {"\u2B50\u2B50\u2B50\u2B50\u{2606}"}</p>
               </div>
             </div>
           </div>

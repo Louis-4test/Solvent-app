@@ -3,7 +3,7 @@ import express from 'express';
 import multer from 'multer';
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { uploadKYCDocument } from '../controllers/kycController.js';
+import { uploadKYCDocument, getKYCStatus } from '../controllers/kycController.js';
 import { auth } from '../middleware/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -28,6 +28,7 @@ const upload = multer({
   }
 });
 
+router.get('/status', auth, getKYCStatus);
 router.post(
   '/upload',
   auth,

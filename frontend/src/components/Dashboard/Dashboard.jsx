@@ -1,7 +1,16 @@
-import React from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import Sidebar, { TopNavbar } from "../Layout/Sidebar";
+import { getMyTransactions } from "../../services/transferAPI";
+import { getUser } from "../../utils/auth";
 import "./Dashboard.css";
+
+const FALLBACK_TRANSACTIONS = [
+  { id: 1, narration: "Mobile Money", type: "Food", created_at: "March 08, 2025", amount: 6500 },
+  { id: 2, narration: "Bank Transfer", type: "Bank to Momo", created_at: "March 07, 2025", amount: 45000 },
+  { id: 3, narration: "Bill Payment", type: "Electric Bill", created_at: "March 04, 2025", amount: 23000 }
+];
 
 const Dashboard = () => {
   const data = [
@@ -12,95 +21,108 @@ const Dashboard = () => {
     { date: "7 Apr", income: 10000, expenses: 6000 },
   ];
 
+  const [recentTransactions, setRecentTransactions] = useState([]);
+  const [balances] = useState({ bank: 45000, momo: 23500, wallet: 8200 });
+  const [user] = useState(getUser());
+
+  useEffect(() => {
+    getMyTransactions()
+      .then((res) => {
+        if (res.success && res.data.length > 0) {
+          setRecentTransactions(res.data);
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not load transactions:', err.message);
+      });
+  }, []);
+
+  const displayTransactions = recentTransactions.length > 0 ? recentTransactions : FALLBACK_TRANSACTIONS;
+
+  const formatAmount = (amount) => `XAF ${Number(amount).toLocaleString()}`;
+
+  const getCounterparty = (tx) => {
+    const userId = user?.id;
+    return tx.Sender?.id === userId ? (tx.Recipient?.fullName || "Recipient") : (tx.Sender?.fullName || "Sender");
+  };
+
   return (
     <div className="dashboard-container">
-      {/* Sidebar */}
-      <div className="sidebar">
-        <h1 className="logo">SOLVENT</h1>
-        <nav>
-          <Link to="/">🏠 Home</Link>
-          <Link to="/transactions">📜 Transactions</Link>
-          <Link to="/transfer/bank-to-momo">💳 Fund Transfer</Link>
-          <Link to="/billPayment">📑 Bill Payment</Link>
-          <Link to="/payment/merchantPayment">📑 Merchant Payment</Link>
-          <Link to="/notifications">🔔 Notifications</Link>
-          <Link to="/settings">⚙️ Settings</Link>
-          <Link to="/logout" className="logout">🚪 Logout</Link>
-        </nav>
-      </div>
+      <Sidebar />
 
       {/* Main Section */}
       <div className="main-section">
         {/* Content Section */}
         <div className="content-section">
-          
-          <div className="navbar">
-            <h1>Dashboard</h1>
-            <div className="user-info">
-              <span className="card">🛒</span>
-              <img src="https://via.placeholder.com/40" alt="User" />
+
+          <TopNavbar title="Dashboard" />
+
+          {!user?.kycVerified && (
+            <div className="kyc-banner">
+              <span>{"\u26A0\uFE0F"} Your account is not KYC verified yet.</span>
+              <Link to="/settings">Verify now</Link>
             </div>
-          </div>
+          )}
 
           <div className="trans">
             <div className="content-section">
               {/* Account Balances (Flex in Row) */}
-            <div className="account-balances">
-              {["Bank", "Momo", "Wallet", "Expenses"].map((type, index) => (
-                <div key={index} className="balance-card">
-                  <p className="balance-type">{type}</p>
-                  <h2 className="balance-amount">XAF {Math.floor(Math.random() * 90000)}</h2>
+              <div className="account-balances">
+                <div className="balance-card">
+                  <p className="balance-type">Bank</p>
+                  <h2 className="balance-amount">{formatAmount(balances.bank)}</h2>
                 </div>
-              ))}
-            </div>
+                <div className="balance-card">
+                  <p className="balance-type">Momo</p>
+                  <h2 className="balance-amount">{formatAmount(balances.momo)}</h2>
+                </div>
+                <div className="balance-card">
+                  <p className="balance-type">Wallet</p>
+                  <h2 className="balance-amount">{formatAmount(balances.wallet)}</h2>
+                </div>
+                <div className="balance-card">
+                  <p className="balance-type">Expenses</p>
+                  <h2 className="balance-amount">{formatAmount(recentTransactions.reduce((sum, t) => sum + Number(t.amount || 0), 0))}</h2>
+                </div>
+              </div>
 
-            {/* Finance Chart */}
-            <div className="finance-chart">
-              <h2 className="chart-title">Finances</h2>
-              <LineChart width={600} height={300} data={data}>
-                <XAxis dataKey="date" />
-                <YAxis />
-                <CartesianGrid strokeDasharray="3 3" />
-                <Tooltip />
-                <Line type="monotone" dataKey="income" stroke="#3b82f6" />
-                <Line type="monotone" dataKey="expenses" stroke="#ef4444" />
-              </LineChart>
-            </div>
+              {/* Finance Chart */}
+              <div className="finance-chart">
+                <h2 className="chart-title">Finances</h2>
+                <LineChart width={600} height={300} data={data}>
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="income" stroke="#3b82f6" />
+                  <Line type="monotone" dataKey="expenses" stroke="#ef4444" />
+                </LineChart>
+              </div>
 
-            {/* Recent Transactions */}
-            <div className="recent-transactions">
-              <h2 className="transactions-title">Recent Transactions</h2>
-              <table className="transactions-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Type</th>
-                    <th>Date</th>
-                    <th>Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>Mobile Money</td>
-                    <td>Food</td>
-                    <td>March 08, 2025</td>
-                    <td>XAF 6500</td>
-                  </tr>
-                  <tr>
-                    <td>Bank Transfer</td>
-                    <td>Bank to Momo</td>
-                    <td>March 07, 2025</td>
-                    <td>XAF 45000</td>
-                  </tr>
-                  <tr>
-                    <td>Bill Payment</td>
-                    <td>Electric Bill</td>
-                    <td>March 04, 2025</td>
-                    <td>XAF 23000</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+              {/* Recent Transactions */}
+              <div className="recent-transactions">
+                <h2 className="transactions-title">Recent Transactions</h2>
+                <table className="transactions-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Type</th>
+                      <th>Date</th>
+                      <th>Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {displayTransactions.slice(0, 4).map((tx) => (
+                      <tr key={tx.id}>
+                        <td>{getCounterparty(tx)}</td>
+                        <td>{tx.narration || tx.type || "Payment"}</td>
+                        <td>{new Date(tx.created_at || tx.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "2-digit" })}</td>
+                        <td>{formatAmount(tx.amount)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {/* Quick Actions Section (At Right) */}
@@ -120,17 +142,21 @@ const Dashboard = () => {
                 <Link to="/transfer/airtime">
                   <button>Buy Airtime</button>
                 </Link>
-                <Link to="./payment/BillPayment">
+                <Link to="/bill-payment">
                   <button>Pay Bill</button>
                 </Link>
               </div>
 
               <div className="quick-actions">
                 <h3 className="quick-actions-title">Quick Actions</h3>
-                <button>Add Money</button>
-                <button>Pay Bill</button>
+                <Link to="/transfer/bank-to-momo">
+                  <button>Add Money</button>
+                </Link>
+                <Link to="/merchant-payment">
+                  <button>Pay Merchant</button>
+                </Link>
               </div>
-          </div>
+            </div>
           </div>
         </div>
       </div>
