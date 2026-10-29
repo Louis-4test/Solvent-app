@@ -87,6 +87,15 @@ Solvent-app/
    ```
    > This also adds the password-reset and admin columns on the `users` table. The API will error on `/auth/me` and `/auth/change-password` if this migration hasn't been run.
 
+4. Load the development demo users, transactions, payment, and notifications:
+   ```bash
+   cd server
+   npm run db:seed
+   ```
+   The seeder is safe to run more than once and refuses to run when `NODE_ENV=production`.
+   Demo login: `alex.demo@example.test` / `DemoPass123!`. The other demo accounts use
+   the same password: `sam.demo@example.test` and `taylor.demo@example.test`.
+
 ## Running the App
 
 Run the backend API (port 3000):

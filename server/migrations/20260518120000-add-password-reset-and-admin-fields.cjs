@@ -3,23 +3,35 @@
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.addColumn('users', 'isAdmin', {
-      type: Sequelize.BOOLEAN,
-      defaultValue: false
-    });
-    await queryInterface.addColumn('users', 'resetPasswordToken', {
-      type: Sequelize.STRING,
-      allowNull: true
-    });
-    await queryInterface.addColumn('users', 'resetPasswordExpires', {
-      type: Sequelize.DATE,
-      allowNull: true
-    });
+    const columns = await queryInterface.describeTable('users');
+    const additions = {
+      is_admin: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: false
+      },
+      reset_password_token: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
+      reset_password_expires: {
+        type: Sequelize.DATE,
+        allowNull: true
+      }
+    };
+
+    for (const [name, definition] of Object.entries(additions)) {
+      if (!columns[name]) {
+        await queryInterface.addColumn('users', name, definition);
+      }
+    }
   },
 
   down: async (queryInterface) => {
-    await queryInterface.removeColumn('users', 'isAdmin');
-    await queryInterface.removeColumn('users', 'resetPasswordToken');
-    await queryInterface.removeColumn('users', 'resetPasswordExpires');
+    const columns = await queryInterface.describeTable('users');
+    for (const name of ['is_admin', 'reset_password_token', 'reset_password_expires']) {
+      if (columns[name]) {
+        await queryInterface.removeColumn('users', name);
+      }
+    }
   }
 };
