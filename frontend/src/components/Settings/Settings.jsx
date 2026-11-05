@@ -144,11 +144,11 @@ export default function Settings() {
       <main className="main-content">
         <TopNavbar title="Settings" />
 
-        <Box sx={{ p: 3 }}>
+        <Box sx={{ p: { xs: 2, sm: 3 } }}>
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
           <Stack spacing={3}>
-            <Paper sx={{ p: 3 }}>
+            <Paper sx={{ p: { xs: 2, sm: 3 } }}>
               <Typography variant="h6" sx={{ mb: 2 }}>Profile</Typography>
               <Divider sx={{ mb: 2 }} />
               <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 2 }}>
@@ -169,7 +169,7 @@ export default function Settings() {
               </Box>
             </Paper>
 
-            <Paper sx={{ p: 3 }}>
+            <Paper sx={{ p: { xs: 2, sm: 3 } }}>
               <Typography variant="h6" sx={{ mb: 1 }}>KYC Verification</Typography>
               <Divider sx={{ mb: 2 }} />
               <Typography variant="body2" sx={{ mb: 2 }}>
@@ -215,7 +215,7 @@ export default function Settings() {
               )}
             </Paper>
 
-            <Paper sx={{ p: 3 }}>
+            <Paper sx={{ p: { xs: 2, sm: 3 } }}>
               <Typography variant="h6" sx={{ mb: 2 }}>Change Password</Typography>
               <Divider sx={{ mb: 2 }} />
               <form onSubmit={handleChangePassword}>
@@ -260,7 +260,7 @@ export default function Settings() {
               </form>
             </Paper>
 
-            <Paper sx={{ p: 3 }}>
+            <Paper sx={{ p: { xs: 2, sm: 3 } }}>
               <Typography variant="h6" sx={{ mb: 1 }}>Session</Typography>
               <Divider sx={{ mb: 2 }} />
               <Button variant="outlined" color="error" onClick={handleLogout}>

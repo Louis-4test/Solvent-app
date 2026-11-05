@@ -90,16 +90,17 @@ export default function Login() {
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
-          height: '100vh',
-          width: '100vw',
+          minHeight: '100vh',
+          width: '100%',
+          p: 2,
           bgcolor: 'background.default',
         }}
       >
         <Box
           sx={{
             maxWidth: 400,
-            width: '90%',
-            p: 4,
+            width: '100%',
+            p: { xs: 2.5, sm: 4 },
             boxShadow: 3,
             borderRadius: 2,
             bgcolor: 'background.paper',
@@ -170,16 +171,17 @@ export default function Login() {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        height: '100vh',
-        width: '100vw',
+        minHeight: '100vh',
+        width: '100%',
+        p: 2,
         bgcolor: 'background.default',
       }}
     >
       <Box
         sx={{
           maxWidth: 400,
-          width: '90%',
-          p: 4,
+          width: '100%',
+          p: { xs: 2.5, sm: 4 },
           boxShadow: 3,
           borderRadius: 2,
           bgcolor: 'background.paper',
