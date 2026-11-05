@@ -3,23 +3,35 @@
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.addColumn('users', 'mfaCode', {
-      type: Sequelize.STRING,
-      allowNull: true
-    });
-    await queryInterface.addColumn('users', 'mfaCodeExpires', {
-      type: Sequelize.DATE,
-      allowNull: true
-    });
-    await queryInterface.addColumn('users', 'kycVerified', {
-      type: Sequelize.BOOLEAN,
-      defaultValue: false
-    });
+    const columns = await queryInterface.describeTable('users');
+    const additions = {
+      mfa_code: {
+        type: Sequelize.STRING,
+        allowNull: true
+      },
+      mfa_code_expires: {
+        type: Sequelize.DATE,
+        allowNull: true
+      },
+      kyc_verified: {
+        type: Sequelize.BOOLEAN,
+        defaultValue: false
+      }
+    };
+
+    for (const [name, definition] of Object.entries(additions)) {
+      if (!columns[name]) {
+        await queryInterface.addColumn('users', name, definition);
+      }
+    }
   },
 
   down: async (queryInterface) => {
-    await queryInterface.removeColumn('users', 'mfaCode');
-    await queryInterface.removeColumn('users', 'mfaCodeExpires');
-    await queryInterface.removeColumn('users', 'kycVerified');
+    const columns = await queryInterface.describeTable('users');
+    for (const name of ['mfa_code', 'mfa_code_expires', 'kyc_verified']) {
+      if (columns[name]) {
+        await queryInterface.removeColumn('users', name);
+      }
+    }
   }
 };

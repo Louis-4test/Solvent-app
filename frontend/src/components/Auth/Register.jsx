@@ -94,7 +94,7 @@ export default function Register() {
         justifyContent: 'center',
         alignItems: 'center',
         minHeight: '100vh',
-        width: '100vw',
+        width: '100%',
         bgcolor: 'background.default',
         p: 2
       }}
@@ -102,8 +102,8 @@ export default function Register() {
       <Box
         sx={{
           maxWidth: 450,
-          width: '90%',
-          p: 4,
+          width: '100%',
+          p: { xs: 2.5, sm: 4 },
           boxShadow: 3,
           borderRadius: 2,
           bgcolor: 'background.paper',

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
 import Sidebar, { TopNavbar } from "../Layout/Sidebar";
 import { getMyTransactions } from "../../services/transferAPI";
 import { getUser } from "../../utils/auth";
@@ -89,14 +89,18 @@ const Dashboard = () => {
               {/* Finance Chart */}
               <div className="finance-chart">
                 <h2 className="chart-title">Finances</h2>
-                <LineChart width={600} height={300} data={data}>
-                  <XAxis dataKey="date" />
-                  <YAxis />
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="income" stroke="#3b82f6" />
-                  <Line type="monotone" dataKey="expenses" stroke="#ef4444" />
-                </LineChart>
+                <div className="chart-wrapper">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
+                      <XAxis dataKey="date" />
+                      <YAxis width={40} />
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <Tooltip />
+                      <Line type="monotone" dataKey="income" stroke="#3b82f6" />
+                      <Line type="monotone" dataKey="expenses" stroke="#ef4444" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
 
               {/* Recent Transactions */}

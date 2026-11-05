@@ -33,33 +33,54 @@ export default function MFAVerification() {
   };
 
   return (
-    <Box sx={{ /* your styling */ }}>
-      <Typography variant="h4" sx={{ mb: 3 }}>
-        Verify Your Identity
-      </Typography>
-      <Typography sx={{ mb: 3 }}>
-        We have sent a 6-digit code to your email. Please enter it below.
-      </Typography>
-      
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      
-      <TextField
-        label="Verification Code"
-        value={code}
-        onChange={(e) => setCode(e.target.value)}
-        fullWidth
-        sx={{ mb: 2 }}
-      />
-      
-      <Button
-        variant="contained"
-        onClick={handleVerify}
-        disabled={loading || !code}
-        fullWidth
-        sx={{ py: 1.5 }}
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: '100vh',
+        width: '100%',
+        p: 2,
+        bgcolor: 'background.default',
+      }}
+    >
+      <Box
+        sx={{
+          maxWidth: 400,
+          width: '100%',
+          p: { xs: 2.5, sm: 4 },
+          boxShadow: 3,
+          borderRadius: 2,
+          bgcolor: 'background.paper',
+        }}
       >
-        {loading ? 'Verifying...' : 'Verify'}
-      </Button>
+        <Typography variant="h4" sx={{ mb: 3, textAlign: 'center', fontWeight: 'bold' }}>
+          Verify Your Identity
+        </Typography>
+        <Typography sx={{ mb: 3, textAlign: 'center' }}>
+          We have sent a 6-digit code to your email. Please enter it below.
+        </Typography>
+
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+        <TextField
+          label="Verification Code"
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          fullWidth
+          sx={{ mb: 2 }}
+        />
+
+        <Button
+          variant="contained"
+          onClick={handleVerify}
+          disabled={loading || !code}
+          fullWidth
+          sx={{ py: 1.5 }}
+        >
+          {loading ? 'Verifying...' : 'Verify'}
+        </Button>
+      </Box>
     </Box>
   );
 }

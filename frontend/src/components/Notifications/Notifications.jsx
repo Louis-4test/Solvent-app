@@ -75,8 +75,8 @@ export default function Notifications() {
       <main className="main-content">
         <TopNavbar title="Notifications" />
 
-        <Box sx={{ p: 3 }}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+        <Box sx={{ p: { xs: 2, sm: 3 } }}>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, justifyContent: "space-between", alignItems: "center", mb: 2 }}>
             <Badge color="primary" badgeContent={unread}>
               <Typography variant="h6">Inbox</Typography>
             </Badge>
