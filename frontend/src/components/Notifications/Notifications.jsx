@@ -70,7 +70,7 @@ export default function Notifications() {
   };
 
   return (
-    <div className="layout">
+    <div className="app-shell">
       <Sidebar />
       <main className="main-content">
         <TopNavbar title="Notifications" />

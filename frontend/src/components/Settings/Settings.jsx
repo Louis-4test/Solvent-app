@@ -16,6 +16,7 @@ import {
   Stack
 } from "@mui/material";
 import Sidebar, { TopNavbar } from "../Layout/Sidebar";
+import { PasswordVisibilityAdornment } from "../Auth/PasswordInput";
 import authAPI from "../../services/authAPI";
 import kycAPI from "../../services/kycAPI";
 import { logout, saveUser } from "../../utils/auth";
@@ -31,6 +32,9 @@ export default function Settings() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordMsg, setPasswordMsg] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [savingPassword, setSavingPassword] = useState(false);
@@ -126,7 +130,7 @@ export default function Settings() {
 
   if (isLoading) {
     return (
-      <div className="layout">
+      <div className="app-shell">
         <Sidebar />
         <main className="main-content">
           <TopNavbar title="Settings" />
@@ -139,7 +143,7 @@ export default function Settings() {
   }
 
   return (
-    <div className="layout">
+    <div className="app-shell">
       <Sidebar />
       <main className="main-content">
         <TopNavbar title="Settings" />
@@ -222,31 +226,64 @@ export default function Settings() {
                 <Stack spacing={2}>
                   <TextField
                     label="Current Password"
-                    type="password"
+                    type={showCurrentPassword ? "text" : "password"}
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     fullWidth
                     required
                     autoComplete="current-password"
+                    slotProps={{
+                      input: {
+                        endAdornment: (
+                          <PasswordVisibilityAdornment
+                            visible={showCurrentPassword}
+                            onToggle={() => setShowCurrentPassword((current) => !current)}
+                            disabled={savingPassword}
+                          />
+                        )
+                      }
+                    }}
                   />
                   <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 2 }}>
                     <TextField
                       label="New Password"
-                      type="password"
+                      type={showNewPassword ? "text" : "password"}
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       fullWidth
                       required
                       autoComplete="new-password"
+                      slotProps={{
+                        input: {
+                          endAdornment: (
+                            <PasswordVisibilityAdornment
+                              visible={showNewPassword}
+                              onToggle={() => setShowNewPassword((current) => !current)}
+                              disabled={savingPassword}
+                            />
+                          )
+                        }
+                      }}
                     />
                     <TextField
                       label="Confirm New Password"
-                      type="password"
+                      type={showConfirmPassword ? "text" : "password"}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       fullWidth
                       required
                       autoComplete="new-password"
+                      slotProps={{
+                        input: {
+                          endAdornment: (
+                            <PasswordVisibilityAdornment
+                              visible={showConfirmPassword}
+                              onToggle={() => setShowConfirmPassword((current) => !current)}
+                              disabled={savingPassword}
+                            />
+                          )
+                        }
+                      }}
                     />
                   </Box>
                   {passwordError && <Alert severity="error">{passwordError}</Alert>}

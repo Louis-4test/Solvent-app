@@ -1,168 +1,229 @@
-.dashboard-container {
-    display: flex;
-    height: auto;
-    width: 100vw;
-    background-color: #EDF2F7;
-  }
-  
-  /* Sidebar */
-  .sidebar {
-    width: 250px;
-    background: #1A273C;
-    color: white;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .logo {
-    text-align: center;
-    font-size: 24px;
-    font-weight: bold;
-    margin-bottom: 20px;
-  }
-  
-  .sidebar nav {
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .sidebar a {
-    text-decoration: none;
-    color: white;
-    padding: 10px;
-    margin-bottom: 10px;
-    border-radius: 5px;
-    transition: background 0.3s;
-  }
-  
-  .sidebar a:hover {
-    background: #374151;
-  }
-  
-  .logout {
-    color: red;
-  }
-  
-  /* Main Section */
-  .main-section {
-    display: flex;
-    flex: 1;
-    padding: 20px;
-  }
-  
-  /* Content Section */
-  .content-section {
-    flex: 2;
-    padding-right: 20px;
-  }
-  
-  .trans{
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    gap: 20px;
-  }
-  /* Account Balances */
-  .account-balances {
-    display: flex;
-    gap: 15px;
-    margin-bottom: 20px;
-  }
-  
-  .balance-card {
-    flex: 1;
-    background: white;
-    padding: 15px;
-    border-radius: 10px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  }
-  
-  .balance-type {
-    color: gray;
-  }
-  
-  .balance-amount {
-    font-size: 20px;
-    font-weight: bold;
-  }
-  
-  /* Finance Chart */
-  .finance-chart {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    margin-bottom: 20px;
-  }
-  
-  /* Recent Transactions */
-  .recent-transactions {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  }
-  
-  .transactions-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-  }
-  
-  .transactions-table th, .transactions-table td {
-    padding: 10px;
-    border-bottom: 1px solid #ddd;
-    text-align: left;
-  }
-  
-  /* Quick Actions Section (At Right) */
-  .quick-actions-section {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-  
-  .quick-actions {
-    background: #1A273C;
-    width: 250px;
-    height: 200px;
-    padding: 16px;
-    border-radius: 16px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    text-align: center;
-  }
-  
-  .quick-actions-title{
-    color: white;
-  }
-  .quick-actions button {
-    display: block;
-    width: 100%;
-    height: auto;
-    margin: 10px 0;
-    padding: 10px;
-    background: white;
-    color: black;
-    border: none;
-    border-radius: 16px;
-    cursor: pointer;
-  }
-  
-  .quick-actions button:hover {
-    background: #2563eb;
-  }
-  
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 336px;
+  align-items: start;
+  gap: 22px;
+}
+
+.dashboard-primary {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.dashboard-aside {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-width: 0;
+}
+
+/* ---------- Balance cards ---------- */
+.account-balances {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.balance-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  min-height: 126px;
+  padding: 22px 20px 18px;
+  background: #ffffff;
+  border-radius: 12px;
+}
+
+.balance-type {
+  margin: 0 0 10px;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.balance-amount {
+  margin: 0;
+  color: #111827;
+  font-size: clamp(17px, 1.35vw, 21px);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.balance-label {
+  margin: 8px 0 0;
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+/* ---------- Finance chart ---------- */
+.finance-chart {
+  padding: 22px 24px 18px;
+}
+
+.card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.chart-title,
+.transactions-title {
+  margin: 0;
+  color: #111827;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.chart-legend {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  color: #4b5563;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 50%;
+}
+
+.legend-income {
+  background: #1a73e8;
+}
+
+.legend-expenses {
+  background: #ef4444;
+}
+
+.chart-wrapper {
+  width: 100%;
+  height: 250px;
+  margin-top: 14px;
+}
+
+/* ---------- Recent transactions ---------- */
+.recent-transactions {
+  padding: 22px 24px 8px;
+}
+
+.card-link {
+  color: #1a73e8;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.card-link:hover {
+  text-decoration: underline;
+}
+
+.table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.transactions-table {
+  width: 100%;
+  margin-top: 10px;
+  border-collapse: collapse;
+}
+
+.transactions-table th {
+  padding: 14px 10px 12px;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.transactions-table td {
+  padding: 15px 10px;
+  color: #374151;
+  font-size: 14px;
+  text-align: left;
+  border-top: 1px solid #edf2f7;
+}
+
+.transactions-table .amount-cell {
+  color: #111827;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ---------- Quick actions ---------- */
+.quick-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-height: 218px;
+  padding: 24px 20px 20px;
+  background: #1a273c;
+  border-radius: 16px;
+}
+
+.quick-actions-title {
+  margin: 0 0 12px;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.quick-actions a {
+  display: block;
+  width: 100%;
+  max-width: 216px;
+}
+
+.quick-actions button {
+  width: 100%;
+  height: 54px;
+  padding: 0 14px;
+  color: #111827;
+  background: #ffffff;
+  border: 0;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.quick-actions button:hover {
+  color: #ffffff;
+  background: #1a73e8;
+}
+
+.quick-actions-empty {
+  min-height: 218px;
+}
+
+/* ---------- KYC banner ---------- */
 .kyc-banner {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  margin: 0 24px;
+  margin: 0 0 18px;
   padding: 12px 16px;
-  background: #fef3c7;
   color: #92400e;
+  background: #fef3c7;
   border: 1px solid #f59e0b;
   border-radius: 12px;
   font-size: 14px;

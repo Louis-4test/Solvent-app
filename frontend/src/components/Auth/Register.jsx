@@ -1,21 +1,53 @@
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
-import { Button, TextField, Typography, Box, Alert, CircularProgress } from '@mui/material';
+import { useState } from 'react';
+import { Alert, Box, Button, Stack, TextField, Typography } from '@mui/material';
 import authAPI from '../../services/authAPI';
 import kycAPI from '../../services/kycAPI';
-import { useState } from 'react';
+import { PasswordVisibilityAdornment } from './PasswordInput';
+import './Auth.css';
+
+const pageSx = {
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  minHeight: '100vh',
+  width: '100%',
+  p: 2,
+  bgcolor: '#edf2f7'
+};
+
+const cardSx = {
+  maxWidth: 400,
+  width: '100%',
+  p: { xs: 2.5, sm: 4 },
+  boxShadow: 3,
+  borderRadius: 2,
+  bgcolor: 'background.paper'
+};
+
+const primaryButtonSx = {
+  py: 1.5,
+  bgcolor: '#1a73e8',
+  '&:hover': {
+    bgcolor: '#1765cc'
+  }
+};
 
 export default function Register() {
-  const { register, handleSubmit, formState: { errors }, watch, reset } = useForm();
+  const { control, register, handleSubmit, formState: { errors }, watch, reset } = useForm();
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const selectedFile = watch('idDocument')?.[0];
 
   const onSubmit = async (data) => {
     try {
       setLoading(true);
       setError('');
-      
+
       // 1. Register the user
       const response = await authAPI.register({
         fullName: data.fullName,
@@ -23,8 +55,6 @@ export default function Register() {
         phone: data.phone,
         password: data.password
       });
-
-      console.log('Registration response:', response); // Debugging
 
       // 2. Store token and user data
       localStorage.setItem('token', response.token);
@@ -42,20 +72,14 @@ export default function Register() {
         await authAPI.sendMFACode(data.email);
       } catch (emailError) {
         console.warn('Verification email failed:', emailError.message);
-        // Continue even if email fails
       }
 
-      // 5. Handle successful registration
       reset();
-
-      // Navigate to login so the user can sign in
       navigate('/login', { replace: true });
-
     } catch (error) {
       let errorMessage = 'Registration failed. Please try again.';
-      
+
       if (error.response) {
-        // Handle specific HTTP errors
         switch (error.response.status) {
           case 409:
             errorMessage = 'Email already registered';
@@ -64,18 +88,18 @@ export default function Register() {
             errorMessage = error.response.data?.message || 'Invalid registration data';
             break;
           case 422:
-            errorMessage = 'Validation failed: ' + 
+            errorMessage = 'Validation failed: ' +
               (error.response.data?.errors?.join(', ') || 'Invalid data');
             break;
           default:
             errorMessage = error.response.data?.message || `Server error (${error.response.status})`;
         }
       } else if (error.message) {
-        errorMessage = error.message.includes('Invalid server response') 
+        errorMessage = error.message.includes('Invalid server response')
           ? 'Registration service is currently unavailable'
           : error.message;
       }
-      
+
       setError(errorMessage);
       console.error('Registration error:', {
         error: error.message,
@@ -88,187 +112,182 @@ export default function Register() {
   };
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-        width: '100%',
-        bgcolor: 'background.default',
-        p: 2
-      }}
-    >
-      <Box
-        sx={{
-          maxWidth: 450,
-          width: '100%',
-          p: { xs: 2.5, sm: 4 },
-          boxShadow: 3,
-          borderRadius: 2,
-          bgcolor: 'background.paper',
-        }}
-      >
-        <Typography variant="h4" sx={{ mb: 3, textAlign: 'center', fontWeight: 'bold' }}>
-          Create Account
+    <Box sx={pageSx}>
+      <Box sx={cardSx}>
+        <Typography variant="h5" sx={{ mb: 3, textAlign: 'center', fontWeight: 'bold' }}>
+          Registration
         </Typography>
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          <TextField
-            label="Full Name"
-            {...register('fullName', { 
-              required: 'Full Name is required',
-              minLength: {
-                value: 3,
-                message: 'Minimum 3 characters required'
-              }
-            })}
-            error={!!errors.fullName}
-            helperText={errors.fullName?.message}
-            fullWidth
-            sx={{ mb: 2 }}
-            disabled={loading}
-          />
-
-          <TextField
-            label="Email"
-            type="email"
-            {...register('email', { 
-              required: 'Email is required',
-              pattern: {
-                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                message: 'Invalid email address'
-              }
-            })}
-            error={!!errors.email}
-            helperText={errors.email?.message}
-            fullWidth
-            sx={{ mb: 2 }}
-            disabled={loading}
-          />
-
-          <TextField
-            label="Phone Number"
-            {...register('phone', { 
-              required: 'Phone Number is required',
-              pattern: {
-                value: /^[+]?[(]?[0-9]{1,4}[)]?[-\s./0-9]*$/,
-                message: 'Invalid phone number'
-              }
-            })}
-            error={!!errors.phone}
-            helperText={errors.phone?.message}
-            fullWidth
-            sx={{ mb: 2 }}
-            disabled={loading}
-          />
-
-          <Box sx={{ mb: 2 }}>
-            <input
-              type="file"
-              accept=".pdf,.jpg,.png,.jpeg"
-              {...register('idDocument', { 
-                required: 'ID Document is required',
-                validate: {
-                  fileSize: files => 
-                    files[0]?.size <= 5 * 1024 * 1024 || 'Max file size is 5MB',
-                  fileType: files => 
-                    ['image/jpeg', 'image/png', 'application/pdf'].includes(files[0]?.type) || 
-                    'Only JPG, PNG, or PDF files are allowed'
+          <Stack spacing={2}>
+            <Controller
+              name="fullName"
+              control={control}
+              rules={{
+                required: 'Full Name is required',
+                minLength: {
+                  value: 3,
+                  message: 'Minimum 3 characters required'
                 }
-              })}
-              style={{ display: 'none' }}
-              id="idDocument"
-            />
-            <label htmlFor="idDocument">
-              <Button 
-                variant="outlined" 
-                component="span" 
-                fullWidth 
-                sx={{ 
-                  py: 1.5,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}
-              >
-                <span>
-                  Upload ID (JPG/PNG/PDF)
-                </span>
-                {watch('idDocument')?.[0] && (
-                  <Typography variant="caption" sx={{ ml: 1 }}>
-                    {(watch('idDocument')?.[0]?.size / (1024 * 1024)).toFixed(2)}MB
-                  </Typography>
-                )}
-              </Button>
-            </label>
-            {errors.idDocument && (
-              <Typography color="error" variant="caption" sx={{ mt: 0.5, display: 'block' }}>
-                {errors.idDocument.message}
-              </Typography>
-            )}
-          </Box>
-
-          <TextField
-            label="Password"
-            type="password"
-            {...register('password', { 
-              required: 'Password is required',
-              minLength: {
-                value: 8,
-                message: 'Minimum 8 characters required'
-              },
-              pattern: {
-                value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
-                message: 'Must contain uppercase, lowercase, number, and special character'
-              }
-            })}
-            error={!!errors.password}
-            helperText={errors.password?.message}
-            fullWidth
-            sx={{ mb: 3 }}
-            disabled={loading}
-          />
-
-          <Button 
-            type="submit" 
-            variant="contained" 
-            color="primary" 
-            fullWidth 
-            sx={{ 
-              py: 1.5, 
-              mb: 2,
-              height: 48
-            }}
-            disabled={loading}
-          >
-            {loading ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              'Create Account'
-            )}
-          </Button>
-
-          <Typography variant="body2" sx={{ textAlign: 'center' }}>
-            Already have an account?{' '}
-            <Button 
-              onClick={() => navigate('/login')} 
-              sx={{ 
-                textTransform: 'none',
-                fontWeight: 'bold'
               }}
+              render={({ field: { ref, ...field }, fieldState }) => (
+                <TextField
+                  {...field}
+                  inputRef={ref}
+                  label="Full Name"
+                  type="text"
+                  fullWidth
+                  disabled={loading}
+                  autoComplete="name"
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                />
+              )}
+            />
+
+            <Controller
+              name="email"
+              control={control}
+              rules={{
+                required: 'Email is required',
+                pattern: {
+                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                  message: 'Invalid email address'
+                }
+              }}
+              render={({ field: { ref, ...field }, fieldState }) => (
+                <TextField
+                  {...field}
+                  inputRef={ref}
+                  label="E-Mail"
+                  type="email"
+                  fullWidth
+                  disabled={loading}
+                  autoComplete="email"
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                />
+              )}
+            />
+
+            <Controller
+              name="phone"
+              control={control}
+              rules={{
+                required: 'Phone Number is required',
+                pattern: {
+                  value: /^[+]?[(]?[0-9]{1,4}[)]?[-\s./0-9]*$/,
+                  message: 'Invalid phone number'
+                }
+              }}
+              render={({ field: { ref, ...field }, fieldState }) => (
+                <TextField
+                  {...field}
+                  inputRef={ref}
+                  label="Phone Number"
+                  type="tel"
+                  fullWidth
+                  disabled={loading}
+                  autoComplete="tel"
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                />
+              )}
+            />
+
+            <div className="auth-field">
+              <input
+                type="file"
+                accept=".pdf,.jpg,.png,.jpeg"
+                className="auth-file-input"
+                id="idDocument"
+                {...register('idDocument', {
+                  required: 'ID Document is required',
+                  validate: {
+                    fileSize: files =>
+                      files[0]?.size <= 5 * 1024 * 1024 || 'Max file size is 5MB',
+                    fileType: files =>
+                      ['image/jpeg', 'image/png', 'application/pdf'].includes(files[0]?.type) ||
+                      'Only JPG, PNG, or PDF files are allowed'
+                  }
+                })}
+              />
+              <label
+                htmlFor="idDocument"
+                className={`auth-file-label${selectedFile ? ' has-file' : ''}`}
+              >
+                <span>Upload ID</span>
+                {selectedFile && <span className="auth-file-meta">{selectedFile.name}</span>}
+              </label>
+              {errors.idDocument && <p className="auth-error-text">{errors.idDocument.message}</p>}
+            </div>
+
+            <Controller
+              name="password"
+              control={control}
+              rules={{
+                required: 'Password is required',
+                minLength: {
+                  value: 8,
+                  message: 'Minimum 8 characters required'
+                },
+                pattern: {
+                  value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+                  message: 'Must contain uppercase, lowercase, number, and special character'
+                }
+              }}
+              render={({ field: { ref, ...field }, fieldState }) => (
+                <TextField
+                  {...field}
+                  inputRef={ref}
+                  label="Password"
+                  type={showPassword ? 'text' : 'password'}
+                  fullWidth
+                  disabled={loading}
+                  autoComplete="new-password"
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                  slotProps={{
+                    input: {
+                      endAdornment: (
+                        <PasswordVisibilityAdornment
+                          visible={showPassword}
+                          onToggle={() => setShowPassword((current) => !current)}
+                          disabled={loading}
+                        />
+                      )
+                    }
+                  }}
+                />
+              )}
+            />
+
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
               disabled={loading}
+              sx={primaryButtonSx}
             >
-              Sign In
+              {loading ? 'Creating account...' : 'Register'}
             </Button>
-          </Typography>
+          </Stack>
         </form>
+
+        <Typography variant="body2" sx={{ mt: 2, textAlign: 'center' }}>
+          Already have an account?{' '}
+          <Button
+            type="button"
+            size="small"
+            onClick={() => navigate('/login')}
+            disabled={loading}
+            sx={{ textTransform: 'none', p: 0, minWidth: 0, fontSize: '0.875rem' }}
+          >
+            Login here
+          </Button>
+        </Typography>
       </Box>
     </Box>
   );

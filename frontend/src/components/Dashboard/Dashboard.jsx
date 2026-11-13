@@ -19,10 +19,11 @@ const Dashboard = () => {
     { date: "5 Apr", income: 6000, expenses: 5000 },
     { date: "6 Apr", income: 8000, expenses: 4000 },
     { date: "7 Apr", income: 10000, expenses: 6000 },
+    { date: "8 Apr", income: 7000, expenses: 3000 }
   ];
 
   const [recentTransactions, setRecentTransactions] = useState([]);
-  const [balances] = useState({ bank: 45000, momo: 23500, wallet: 8200 });
+  const [balances] = useState({ bank: 89000, momo: 32000, wallet: 5700 });
   const [user] = useState(getUser());
 
   useEffect(() => {
@@ -33,7 +34,7 @@ const Dashboard = () => {
         }
       })
       .catch((err) => {
-        console.warn('Could not load transactions:', err.message);
+        console.warn("Could not load transactions:", err.message);
       });
   }, []);
 
@@ -43,69 +44,89 @@ const Dashboard = () => {
 
   const getCounterparty = (tx) => {
     const userId = user?.id;
-    return tx.Sender?.id === userId ? (tx.Recipient?.fullName || "Recipient") : (tx.Sender?.fullName || "Sender");
+    if (tx.Sender?.id === userId) return tx.Recipient?.fullName || "Recipient";
+    if (tx.Recipient?.id === userId) return tx.Sender?.fullName || "Sender";
+    return tx.narration || tx.Sender?.fullName || tx.Recipient?.fullName || "Transaction";
   };
 
+  const totalExpenses = recentTransactions.reduce((sum, t) => sum + Number(t.amount || 0), 0) || 5400;
+
   return (
-    <div className="dashboard-container">
+    <div className="app-shell">
       <Sidebar />
 
-      {/* Main Section */}
-      <div className="main-section">
-        {/* Content Section */}
-        <div className="content-section">
+      <main className="main-content">
+        <TopNavbar title="Dashboard" variant="muted" />
 
-          <TopNavbar title="Dashboard" />
+        {!user?.kycVerified && (
+          <div className="kyc-banner">
+            <span>{"\u26A0\uFE0F"} Your account is not KYC verified yet.</span>
+            <Link to="/settings">Verify now</Link>
+          </div>
+        )}
 
-          {!user?.kycVerified && (
-            <div className="kyc-banner">
-              <span>{"\u26A0\uFE0F"} Your account is not KYC verified yet.</span>
-              <Link to="/settings">Verify now</Link>
-            </div>
-          )}
+        <div className="dashboard-grid">
+          <div className="dashboard-primary">
+            <section className="account-balances" aria-label="Account balances">
+              <article className="balance-card">
+                <p className="balance-type">Bank</p>
+                <h2 className="balance-amount">{formatAmount(balances.bank)}</h2>
+                <p className="balance-label">Balance</p>
+              </article>
+              <article className="balance-card">
+                <p className="balance-type">Momo</p>
+                <h2 className="balance-amount">{formatAmount(balances.momo)}</h2>
+                <p className="balance-label">Balance</p>
+              </article>
+              <article className="balance-card">
+                <p className="balance-type">Wallet</p>
+                <h2 className="balance-amount">{formatAmount(balances.wallet)}</h2>
+                <p className="balance-label">Balance</p>
+              </article>
+              <article className="balance-card">
+                <p className="balance-type">Expenses</p>
+                <h2 className="balance-amount">{formatAmount(totalExpenses)}</h2>
+                <p className="balance-label">This month</p>
+              </article>
+            </section>
 
-          <div className="trans">
-            <div className="content-section">
-              {/* Account Balances (Flex in Row) */}
-              <div className="account-balances">
-                <div className="balance-card">
-                  <p className="balance-type">Bank</p>
-                  <h2 className="balance-amount">{formatAmount(balances.bank)}</h2>
-                </div>
-                <div className="balance-card">
-                  <p className="balance-type">Momo</p>
-                  <h2 className="balance-amount">{formatAmount(balances.momo)}</h2>
-                </div>
-                <div className="balance-card">
-                  <p className="balance-type">Wallet</p>
-                  <h2 className="balance-amount">{formatAmount(balances.wallet)}</h2>
-                </div>
-                <div className="balance-card">
-                  <p className="balance-type">Expenses</p>
-                  <h2 className="balance-amount">{formatAmount(recentTransactions.reduce((sum, t) => sum + Number(t.amount || 0), 0))}</h2>
-                </div>
-              </div>
-
-              {/* Finance Chart */}
-              <div className="finance-chart">
+            <section className="finance-chart page-card">
+              <div className="card-heading">
                 <h2 className="chart-title">Finances</h2>
-                <div className="chart-wrapper">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
-                      <XAxis dataKey="date" />
-                      <YAxis width={40} />
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <Tooltip />
-                      <Line type="monotone" dataKey="income" stroke="#3b82f6" />
-                      <Line type="monotone" dataKey="expenses" stroke="#ef4444" />
-                    </LineChart>
-                  </ResponsiveContainer>
+                <div className="chart-legend" aria-hidden="true">
+                  <span><i className="legend-dot legend-income" /> Income</span>
+                  <span><i className="legend-dot legend-expenses" /> Expenses</span>
                 </div>
               </div>
+              <div className="chart-wrapper">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={data} margin={{ top: 12, right: 12, left: -16, bottom: 0 }}>
+                    <CartesianGrid stroke="#E5E7EB" strokeDasharray="3 5" vertical={false} />
+                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: "#64748B", fontSize: 12 }} />
+                    <YAxis
+                      width={56}
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "#64748B", fontSize: 12 }}
+                      tickFormatter={(value) => `XAF${value / 1000}k`}
+                    />
+                    <Tooltip
+                      formatter={(value) => [`XAF ${Number(value).toLocaleString()}`, ""]}
+                      contentStyle={{ borderRadius: 10, border: "1px solid #E5E7EB", fontSize: 13 }}
+                    />
+                    <Line type="monotone" dataKey="income" name="Income" stroke="#1A73E8" strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} />
+                    <Line type="monotone" dataKey="expenses" name="Expenses" stroke="#EF4444" strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </section>
 
-              {/* Recent Transactions */}
-              <div className="recent-transactions">
+            <section className="recent-transactions page-card">
+              <div className="card-heading">
                 <h2 className="transactions-title">Recent Transactions</h2>
+                <Link to="/transactions" className="card-link">View all</Link>
+              </div>
+              <div className="table-scroll">
                 <table className="transactions-table">
                   <thead>
                     <tr>
@@ -121,49 +142,32 @@ const Dashboard = () => {
                         <td>{getCounterparty(tx)}</td>
                         <td>{tx.narration || tx.type || "Payment"}</td>
                         <td>{new Date(tx.created_at || tx.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "2-digit" })}</td>
-                        <td>{formatAmount(tx.amount)}</td>
+                        <td className="amount-cell">{formatAmount(tx.amount)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            </div>
-
-            {/* Quick Actions Section (At Right) */}
-            <div className="quick-actions-section">
-              <div className="quick-actions">
-                <h3 className="quick-actions-title">Transfer</h3>
-                <Link to="/transfer/bank-to-momo">
-                  <button>Bank to Momo</button>
-                </Link>
-                <Link to="/transfer/momo-to-bank">
-                  <button>Momo to Bank</button>
-                </Link>
-              </div>
-
-              <div className="quick-actions">
-                <h3 className="quick-actions-title">Quick Actions</h3>
-                <Link to="/transfer/airtime">
-                  <button>Buy Airtime</button>
-                </Link>
-                <Link to="/bill-payment">
-                  <button>Pay Bill</button>
-                </Link>
-              </div>
-
-              <div className="quick-actions">
-                <h3 className="quick-actions-title">Quick Actions</h3>
-                <Link to="/transfer/bank-to-momo">
-                  <button>Add Money</button>
-                </Link>
-                <Link to="/merchant-payment">
-                  <button>Pay Merchant</button>
-                </Link>
-              </div>
-            </div>
+            </section>
           </div>
+
+          <aside className="dashboard-aside" aria-label="Quick actions">
+            <div className="quick-actions">
+              <h3 className="quick-actions-title">Transfer</h3>
+              <Link to="/transfer/bank-to-momo"><button type="button">Bank to Momo</button></Link>
+              <Link to="/transfer/momo-to-bank"><button type="button">Momo to Bank</button></Link>
+            </div>
+
+            <div className="quick-actions">
+              <h3 className="quick-actions-title">Quick Actions</h3>
+              <Link to="/transfer/bank-to-momo"><button type="button">Add Money</button></Link>
+              <Link to="/bill-payment"><button type="button">Pay Bill</button></Link>
+            </div>
+
+            <div className="quick-actions quick-actions-empty" aria-hidden="true" />
+          </aside>
         </div>
-      </div>
+      </main>
     </div>
   );
 };
