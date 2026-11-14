@@ -1,13 +1,36 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { Op } from 'sequelize';
-import { User } from '../models/index.js';
+import { User, KYC } from '../models/index.js';
 import emailService from '../services/emailService.js';
 import { generateToken, generateTempToken } from '../utils/helpers.js';
 
 // Constants
 const MFA_CODE_EXPIRATION_MINUTES = 55;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const PROFILE_UPLOAD_DIR = path.join(__dirname, '../uploads/profiles');
+
+const removeFile = async (filePath) => {
+  if (!filePath) return;
+
+  try {
+    await fs.promises.unlink(filePath);
+  } catch (error) {
+    if (error.code !== 'ENOENT') {
+      console.warn('Could not remove file:', filePath, error.message);
+    }
+  }
+};
+
+const removeAvatarFile = async (avatarUrl) => {
+  if (!avatarUrl || !avatarUrl.startsWith('/uploads/profiles/')) return;
+  await removeFile(path.join(PROFILE_UPLOAD_DIR, path.basename(avatarUrl)));
+};
 
 // Helper to generate and save MFA code
 const generateAndSaveMFACode = async (user) => {
@@ -100,6 +123,7 @@ export const register = async (req, res) => {
         id: user.id,
         email: user.email,
         fullName: user.fullName,
+        avatarUrl: user.avatarUrl || null,
         isVerified: user.isVerified
       }
     });
@@ -128,6 +152,19 @@ export const register = async (req, res) => {
   }
 };
 
+const publicUser = (user) => ({
+  id: user.id,
+  fullName: user.fullName,
+  email: user.email,
+  phone: user.phone,
+  avatarUrl: user.avatarUrl || null,
+  isVerified: user.isVerified,
+  mfaEnabled: user.mfaEnabled,
+  kycVerified: user.kycVerified,
+  createdAt: user.createdAt,
+  updatedAt: user.updatedAt
+});
+
 export const getMe = async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id, {
@@ -152,6 +189,255 @@ export const getMe = async (req, res) => {
       success: false,
       error: 'Failed to fetch user',
       code: 'SERVER_ERROR'
+    });
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const { fullName, email, phone } = req.body;
+    const user = await User.findByPk(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found',
+        code: 'USER_NOT_FOUND'
+      });
+    }
+
+    const updates = {};
+
+    if (fullName !== undefined) {
+      const trimmedName = String(fullName).trim();
+
+      if (trimmedName.length < 3) {
+        return res.status(400).json({
+          success: false,
+          error: 'Full name must be at least 3 characters',
+          code: 'INVALID_FULL_NAME'
+        });
+      }
+
+      updates.fullName = trimmedName;
+    }
+
+    if (email !== undefined) {
+      const normalizedEmail = String(email).trim().toLowerCase();
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Please provide a valid email address',
+          code: 'INVALID_EMAIL'
+        });
+      }
+
+      const emailOwner = await User.findOne({
+        where: {
+          email: normalizedEmail,
+          id: { [Op.ne]: user.id }
+        }
+      });
+
+      if (emailOwner) {
+        return res.status(409).json({
+          success: false,
+          error: 'Email is already in use',
+          code: 'EMAIL_EXISTS'
+        });
+      }
+
+      updates.email = normalizedEmail;
+    }
+
+    if (phone !== undefined) {
+      const trimmedPhone = String(phone).trim();
+
+      if (!trimmedPhone) {
+        return res.status(400).json({
+          success: false,
+          error: 'Phone number is required',
+          code: 'INVALID_PHONE'
+        });
+      }
+
+      const phoneOwner = await User.findOne({
+        where: {
+          phone: trimmedPhone,
+          id: { [Op.ne]: user.id }
+        }
+      });
+
+      if (phoneOwner) {
+        return res.status(409).json({
+          success: false,
+          error: 'Phone number is already in use',
+          code: 'PHONE_EXISTS'
+        });
+      }
+
+      updates.phone = trimmedPhone;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'No profile fields were provided',
+        code: 'NO_PROFILE_UPDATES'
+      });
+    }
+
+    await user.update(updates);
+
+    return res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      user: publicUser(user)
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to update profile',
+      code: 'PROFILE_UPDATE_FAILED'
+    });
+  }
+};
+
+export const deleteProfile = async (req, res) => {
+  try {
+    const { password } = req.body;
+    const user = await User.findByPk(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found',
+        code: 'USER_NOT_FOUND'
+      });
+    }
+
+    if (!password) {
+      return res.status(400).json({
+        success: false,
+        error: 'Password is required to delete your account',
+        code: 'MISSING_PASSWORD'
+      });
+    }
+
+    const passwordMatch = await bcrypt.compare(password, user.password);
+
+    if (!passwordMatch) {
+      return res.status(401).json({
+        success: false,
+        error: 'Password is incorrect',
+        code: 'INVALID_PASSWORD'
+      });
+    }
+
+    // Remove KYC records first so accounts can be deleted even if the
+    // database FK was created without an ON DELETE CASCADE rule.
+    try {
+      await KYC.destroy({ where: { user_id: user.id } });
+    } catch (kycError) {
+      console.warn('Could not delete KYC records before account deletion:', kycError.message);
+    }
+
+    await user.destroy();
+    await removeAvatarFile(user.avatarUrl);
+
+    return res.json({
+      success: true,
+      message: 'Account deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete profile error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to delete account',
+      code: 'PROFILE_DELETE_FAILED'
+    });
+  }
+};
+
+export const updateAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please choose an image to upload',
+        code: 'MISSING_AVATAR_FILE'
+      });
+    }
+
+    const user = await User.findByPk(req.user.id);
+
+    if (!user) {
+      await removeFile(req.file.path);
+      return res.status(404).json({
+        success: false,
+        error: 'User not found',
+        code: 'USER_NOT_FOUND'
+      });
+    }
+
+    const previousAvatar = user.avatarUrl;
+    const avatarUrl = `/uploads/profiles/${req.file.filename}`;
+
+    await user.update({ avatarUrl });
+
+    if (previousAvatar && previousAvatar !== avatarUrl) {
+      await removeAvatarFile(previousAvatar);
+    }
+
+    return res.json({
+      success: true,
+      message: 'Profile picture updated successfully',
+      user: publicUser(user)
+    });
+  } catch (error) {
+    console.error('Update avatar error:', error);
+
+    if (req.file?.path) {
+      await removeFile(req.file.path);
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to update profile picture',
+      code: 'AVATAR_UPDATE_FAILED'
+    });
+  }
+};
+
+export const deleteAvatar = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found',
+        code: 'USER_NOT_FOUND'
+      });
+    }
+
+    const previousAvatar = user.avatarUrl;
+    await user.update({ avatarUrl: null });
+    await removeAvatarFile(previousAvatar);
+
+    return res.json({
+      success: true,
+      message: 'Profile picture removed successfully',
+      user: publicUser(user)
+    });
+  } catch (error) {
+    console.error('Delete avatar error:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to remove profile picture',
+      code: 'AVATAR_DELETE_FAILED'
     });
   }
 };
@@ -254,6 +540,7 @@ export const login = async (req, res) => {
         id: user.id,
         email: user.email,
         fullName: user.fullName,
+        avatarUrl: user.avatarUrl || null,
         isVerified: user.isVerified,
         mfaEnabled: user.mfaEnabled,
         kycVerified: user.kycVerified
@@ -329,6 +616,7 @@ export const verifyLoginMFA = async (req, res) => {
         id: user.id,
         email: user.email,
         fullName: user.fullName,
+        avatarUrl: user.avatarUrl || null,
         mfaEnabled: user.mfaEnabled,
         kycVerified: user.kycVerified
       }
@@ -463,6 +751,7 @@ export const verifyMFA = async (req, res) => {
         id: user.id,
         email: user.email,
         fullName: user.fullName,
+        avatarUrl: user.avatarUrl || null,
         isVerified: true,
         mfaEnabled: true,
         kycVerified: user.kycVerified

@@ -14,6 +14,7 @@ import BillPayment from "./components/payment/BillPayment";
 import MerchantPayment from "./components/payment/MerchantPayment";
 import Notifications from "./components/Notifications/Notifications";
 import Settings from "./components/Settings/Settings";
+import Profile from "./components/Profile/Profile";
 
 
 function App() {
@@ -35,6 +36,7 @@ function App() {
         <Route path="/merchant-payment" element={<ProtectedRoute><MerchantPayment /></ProtectedRoute>} />
         <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
         {/* Fallback */}
         <Route path="*" element={<Login />} />

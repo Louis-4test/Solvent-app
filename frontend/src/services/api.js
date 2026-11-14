@@ -4,9 +4,6 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 const api = axios.create({
   baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json'
-  },
   withCredentials: true
 });
 
@@ -42,6 +39,18 @@ api.interceptors.response.use(
     throw normalizedError;
   }
 );
+
+export const API_ORIGIN = API_URL.replace(/\/api\/?$/, '');
+
+export const resolveMediaUrl = (value) => {
+  if (!value) return '';
+
+  if (/^(https?:|data:|blob:)/i.test(value)) {
+    return value;
+  }
+
+  return `${API_ORIGIN}${value.startsWith('/') ? '' : '/'}${value}`;
+};
 
 export default api;
 export { API_URL };

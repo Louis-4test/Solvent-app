@@ -1,33 +1,60 @@
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
-import { Button, TextField, Typography, Box, Alert, CircularProgress } from '@mui/material';
 import { useState } from 'react';
+import { Alert, Box, Button, Stack, TextField, Typography } from '@mui/material';
 import authAPI from '../../services/authAPI';
 import { saveAuth } from '../../utils/auth';
+import { PasswordVisibilityAdornment } from './PasswordInput';
+import './Auth.css';
+
+const pageSx = {
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  minHeight: '100vh',
+  width: '100%',
+  p: 2,
+  bgcolor: '#edf2f7'
+};
+
+const cardSx = {
+  maxWidth: 400,
+  width: '100%',
+  p: { xs: 2.5, sm: 4 },
+  boxShadow: 3,
+  borderRadius: 2,
+  bgcolor: 'background.paper'
+};
+
+const primaryButtonSx = {
+  py: 1.5,
+  bgcolor: '#1a73e8',
+  '&:hover': {
+    bgcolor: '#1765cc'
+  }
+};
 
 export default function Login() {
-  const { register, handleSubmit, formState: { errors } } = useForm();
+  const { control, handleSubmit } = useForm();
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [mfaRequired, setMfaRequired] = useState(false);
   const [tempToken, setTempToken] = useState('');
   const [email, setEmail] = useState('');
+  const [mfaCode, setMfaCode] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const onSubmit = async (data) => {
-    console.log('Submitting login with:', { 
-      identifier: data.identifier.trim(), 
-      password: data.password 
-    });
     try {
       setLoading(true);
       setError('');
-  
+
       const response = await authAPI.login({
         identifier: data.identifier.trim(),
         password: data.password
       });
-  
+
       if (response.mfaRequired) {
         setMfaRequired(true);
         setTempToken(response.tempToken);
@@ -69,12 +96,12 @@ export default function Login() {
     navigate('/', { replace: true });
   };
 
-  const handleMFAVerify = async (mfaCode) => {
+  const handleMFAVerify = async (code) => {
     try {
       setLoading(true);
       setError('');
 
-      const response = await authAPI.verifyLoginMFA(mfaCode, tempToken);
+      const response = await authAPI.verifyLoginMFA(code, tempToken);
       handleLoginSuccess(response);
     } catch (error) {
       setError(error.message || 'Invalid verification code');
@@ -85,184 +112,189 @@ export default function Login() {
 
   if (mfaRequired) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '100vh',
-          width: '100%',
-          p: 2,
-          bgcolor: 'background.default',
-        }}
-      >
-        <Box
-          sx={{
-            maxWidth: 400,
-            width: '100%',
-            p: { xs: 2.5, sm: 4 },
-            boxShadow: 3,
-            borderRadius: 2,
-            bgcolor: 'background.paper',
-          }}
-        >
-          <Typography variant="h4" sx={{ mb: 3, textAlign: 'center', fontWeight: 'bold' }}>
+      <Box sx={pageSx}>
+        <Box sx={cardSx}>
+          <Typography variant="h5" sx={{ mb: 1, textAlign: 'center', fontWeight: 'bold' }}>
             Verify Your Identity
           </Typography>
-          
-          <Typography sx={{ mb: 3, textAlign: 'center' }}>
-            We have sent a 6-digit code to {email ? `your email (${email})` : 'your registered email'}. 
+          <Typography variant="body2" sx={{ mb: 3, textAlign: 'center', color: 'text.secondary' }}>
+            We have sent a 6-digit code to {email ? `your email (${email})` : 'your registered email'}.
             Please enter it below.
           </Typography>
-          
-          {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
-          
-          <TextField
-            label="Verification Code"
-            fullWidth
-            sx={{ mb: 2 }}
-            inputProps={{ maxLength: 6 }}
-            onChange={(e) => {
-              if (e.target.value.length === 6) {
-                handleMFAVerify(e.target.value);
-              }
+
+          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (mfaCode.length === 6) handleMFAVerify(mfaCode);
             }}
-          />
-          
-          <Box sx={{ textAlign: 'center', mt: 2 }}>
+          >
+            <Stack spacing={2}>
+              <TextField
+                label="Verification Code"
+                type="text"
+                fullWidth
+                value={mfaCode}
+                onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ''))}
+                disabled={loading}
+                autoComplete="one-time-code"
+                slotProps={{ htmlInput: { inputMode: 'numeric', maxLength: 6 } }}
+              />
+
+              <Button
+                type="submit"
+                variant="contained"
+                fullWidth
+                disabled={loading || mfaCode.length !== 6}
+                sx={primaryButtonSx}
+              >
+                {loading ? 'Verifying...' : 'Verify'}
+              </Button>
+            </Stack>
+          </form>
+
+          <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mt: 2 }}>
             <Button
-              variant="text"
+              type="button"
+              size="small"
               onClick={() => setMfaRequired(false)}
-              sx={{ mr: 2 }}
               disabled={loading}
+              sx={{ textTransform: 'none' }}
             >
               Back to Login
             </Button>
-            
             <Button
-              variant="text"
+              type="button"
+              size="small"
               onClick={() => authAPI.sendMFACode(email).then(() => {
                 setError('');
                 alert('New verification code sent!');
               })}
               disabled={loading}
+              sx={{ textTransform: 'none' }}
             >
               Resend Code
             </Button>
           </Box>
-          
-          {loading && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-              <CircularProgress size={24} />
-            </Box>
-          )}
         </Box>
       </Box>
     );
   }
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-        width: '100%',
-        p: 2,
-        bgcolor: 'background.default',
-      }}
-    >
-      <Box
-        sx={{
-          maxWidth: 400,
-          width: '100%',
-          p: { xs: 2.5, sm: 4 },
-          boxShadow: 3,
-          borderRadius: 2,
-          bgcolor: 'background.paper',
-        }}
-      >
-        <Typography variant="h4" sx={{ mb: 3, textAlign: 'center', fontWeight: 'bold' }}>
-          Login
+    <Box sx={pageSx}>
+      <Box sx={cardSx}>
+        <Typography variant="h5" sx={{ mb: 3, textAlign: 'center', fontWeight: 'bold' }}>
+          LOGIN
         </Typography>
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <TextField
-            label="Email or Phone Number"
-            {...register('identifier', { 
-              required: 'Email or phone number is required',
-              validate: {
-                validIdentifier: value => 
-                  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) || 
-                  /^[+]?[(]?[0-9]{1,4}[)]?[-\s./0-9]*$/.test(value) ||
-                  'Please enter a valid email or phone number'
-              }
-            })}
-            error={!!errors.identifier}
-            helperText={errors.identifier?.message}
-            fullWidth
-            sx={{ mb: 2 }}
-          />
+        <form onSubmit={handleSubmit(onSubmit)} noValidate>
+          <Stack spacing={2}>
+            <Controller
+              name="identifier"
+              control={control}
+              rules={{
+                required: 'Email or phone number is required',
+                validate: {
+                  validIdentifier: value =>
+                    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ||
+                    /^[+]?[(]?[0-9]{1,4}[)]?[-\s./0-9]*$/.test(value) ||
+                    'Please enter a valid email or phone number'
+                }
+              }}
+              render={({ field: { ref, ...field }, fieldState }) => (
+                <TextField
+                  {...field}
+                  inputRef={ref}
+                  label="E-Mail/Phone Number"
+                  type="text"
+                  fullWidth
+                  disabled={loading}
+                  autoComplete="username"
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                />
+              )}
+            />
 
-          <TextField
-            label="Password"
-            type="password"
-            {...register('password', { 
-              required: 'Password is required',
-              minLength: {
-                value: 8,
-                message: 'Password must be at least 8 characters'
-              }
-            })}
-            error={!!errors.password}
-            helperText={errors.password?.message}
-            fullWidth
-            sx={{ mb: 2 }}
-          />
+            <Controller
+              name="password"
+              control={control}
+              rules={{
+                required: 'Password is required',
+                minLength: {
+                  value: 8,
+                  message: 'Password must be at least 8 characters'
+                }
+              }}
+              render={({ field: { ref, ...field }, fieldState }) => (
+                <TextField
+                  {...field}
+                  inputRef={ref}
+                  label="Password"
+                  type={showPassword ? 'text' : 'password'}
+                  fullWidth
+                  disabled={loading}
+                  autoComplete="current-password"
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                  slotProps={{
+                    input: {
+                      endAdornment: (
+                        <PasswordVisibilityAdornment
+                          visible={showPassword}
+                          onToggle={() => setShowPassword((current) => !current)}
+                          disabled={loading}
+                        />
+                      )
+                    }
+                  }}
+                />
+              )}
+            />
 
-          <Box sx={{ textAlign: 'right', mb: 2 }}>
-            <Button 
-              onClick={() => navigate('/forgot-password')} 
-              sx={{ textTransform: 'none' }}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mt: -0.5 }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                Forget password?
+              </Typography>
+              <Button
+                type="button"
+                size="small"
+                onClick={() => navigate('/forgot-password')}
+                disabled={loading}
+                sx={{ textTransform: 'none', p: 0, minWidth: 0, fontSize: '0.875rem' }}
+              >
+                Click here
+              </Button>
+            </Box>
+
+            <Button
+              type="submit"
+              variant="contained"
+              fullWidth
               disabled={loading}
+              sx={primaryButtonSx}
             >
-              Forgot password?
+              {loading ? 'Logging in...' : 'Login'}
             </Button>
-          </Box>
-
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            fullWidth
-            sx={{ py: 1.5, mb: 2 }}
-            disabled={loading}
-          >
-            {loading ? <CircularProgress size={24} color="inherit" /> : 'Login'}
-          </Button>
-
-          <Typography variant="body2" sx={{ textAlign: 'center' }}>
-            Don&apos;t have an account?{' '}
-            <Button 
-              onClick={() => navigate('/register')} 
-              sx={{ textTransform: 'none' }}
-              disabled={loading}
-            >
-              Register here
-            </Button>
-          </Typography>
+          </Stack>
         </form>
+
+        <Typography variant="body2" sx={{ mt: 2, textAlign: 'center' }}>
+          Don&apos;t have an account?{' '}
+          <Button
+            type="button"
+            size="small"
+            onClick={() => navigate('/register')}
+            disabled={loading}
+            sx={{ textTransform: 'none', p: 0, minWidth: 0, fontSize: '0.875rem' }}
+          >
+            Register here
+          </Button>
+        </Typography>
       </Box>
     </Box>
   );

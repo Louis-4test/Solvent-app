@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import Sidebar, { TopNavbar } from "../Layout/Sidebar";
 import { transferFunds, getMyTransactions } from "../../services/transferAPI";
+import "../payment/BillPayment.css";
 import "./Transfer.css";
 
 const CHANNEL_LABELS = {
@@ -68,26 +69,23 @@ const Transfer = () => {
   const formatAmount = (value) => `XAF ${Number(value).toLocaleString()}`;
 
   return (
-    <div className="container">
+    <div className="app-shell">
       <Sidebar />
 
-      {/* Main Content */}
-      <div className="main-content">
+      <main className="main-content">
         <TopNavbar title="Fund Transfer" />
 
-        {/* Fund Transfer Section */}
-        <div className="transfer-container">
-          <div className="transfer-card">
-            <div className="transfer-form">
-              <div className="form-tabs">
-                <span className="active-tab">Fund Transfer</span>
-                <Link to="/merchant-payment">
-                  <span>Merchant Pay</span>
-                </Link>
-              </div>
+        <div className="payment-layout">
+          <form className="payment-form-card" onSubmit={handleTransfer}>
+            <div className="form-tabs">
+              <span className="active-tab">Fund Transfer</span>
+              <Link to="/merchant-payment">Merchant Pay</Link>
+            </div>
 
-              <label>Transfer Type</label>
+            <div className="field">
+              <label htmlFor="transfer-type">Transfer Type</label>
               <select
+                id="transfer-type"
                 value={type}
                 onChange={(e) => navigate(`/transfer/${e.target.value}`)}
               >
@@ -95,47 +93,58 @@ const Transfer = () => {
                   <option key={value} value={value}>{label}</option>
                 ))}
               </select>
+            </div>
 
-              <label>Recipient Phone Number</label>
+            <div className="field">
+              <label htmlFor="recipient-phone">Recipient Phone Number</label>
               <input
+                id="recipient-phone"
                 type="text"
                 placeholder="6XXXXXXX"
                 value={recipientPhone}
                 onChange={(e) => setRecipientPhone(e.target.value)}
               />
+            </div>
 
-              <label>Amount ({CHANNEL_LABELS[type] || type})</label>
+            <div className="field">
+              <label htmlFor="transfer-amount">Amount ({CHANNEL_LABELS[type] || type})</label>
               <input
+                id="transfer-amount"
                 type="number"
+                min="0"
                 placeholder="Enter Amount"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
               />
+            </div>
 
-              <label>Narration (optional)</label>
+            <div className="field">
+              <label htmlFor="transfer-narration">Narration (optional)</label>
               <input
+                id="transfer-narration"
                 type="text"
                 placeholder="What is this transfer for?"
                 value={narration}
                 onChange={(e) => setNarration(e.target.value)}
               />
+            </div>
 
-              {error && <p className="form-error">{error}</p>}
-              {message && <p className="form-success">{message}</p>}
+            {error && <p className="form-error" role="alert">{error}</p>}
+            {message && <p className="form-success" role="status">{message}</p>}
 
-              <div className="form-actions">
-                <button className="back">
-                  <Link to="/">{"\u2B05\uFE0F"} Back</Link>
-                </button>
-                <button className="transfer-button" onClick={handleTransfer} disabled={loading}>
-                  {loading ? "Processing..." : "Transfer"}
-                </button>
-              </div>
+            <div className="form-actions">
+              <button type="button" className="back-btn" onClick={() => navigate("/")}>
+                {"< Back"}
+              </button>
+              <button type="submit" className="pay-btn" disabled={loading}>
+                {loading ? "Processing..." : "Transfer"}
+              </button>
+            </div>
 
-              {/* Recent Transactions */}
-              <div className="recent-transactions">
-                <h2 className="transactions-title">Recent Transactions</h2>
-                <table className="transactions-table">
+            <div className="recent-transfers">
+              <h2 className="recent-transfers-title">Recent Transactions</h2>
+              <div className="recent-transfers-scroll">
+                <table className="recent-transfers-table">
                   <thead>
                     <tr>
                       <th>Name</th>
@@ -160,38 +169,29 @@ const Transfer = () => {
                 </table>
               </div>
             </div>
+          </form>
 
-            {/* Right Side Actions */}
-            <div className="side-actions">
-              <div className="quick-actions">
-                <h3 className="quick-actions-title">Transfer</h3>
-                <Link to="/transfer/bank-to-momo">
-                  <button>Bank to Momo</button>
-                </Link>
-                <Link to="/transfer/momo-to-bank">
-                  <button>Momo to Bank</button>
-                </Link>
-              </div>
-
-              <div className="quick-actions">
-                <h3 className="quick-actions-title">Quick Actions</h3>
-                <Link to="/transfer/airtime">
-                  <button>Buy Airtime</button>
-                </Link>
-                <Link to="/bill-payment">
-                  <button>Pay Bill</button>
-                </Link>
-              </div>
-
-              <div className="quick-actions">
-                <p className="quick-actions-title">Review:</p>
-                <textarea placeholder="Write your review..." rows="5"></textarea>
-                <p className="quick-actions-title">Rate: {"\u2B50\u2B50\u2B50\u2B50\u{2606}"}</p>
-              </div>
+          <aside className="payment-side" aria-label="Quick actions">
+            <div className="side-card">
+              <h3>Transfer</h3>
+              <Link to="/transfer/bank-to-momo"><button type="button">Bank to Momo</button></Link>
+              <Link to="/transfer/momo-to-bank"><button type="button">Momo to Bank</button></Link>
             </div>
-          </div>
+
+            <div className="side-card">
+              <h3>Quick Actions</h3>
+              <Link to="/bill-payment"><button type="button">Buy Airtime</button></Link>
+              <Link to="/bill-payment"><button type="button">Pay Bill</button></Link>
+            </div>
+
+            <div className="side-card review-card">
+              <h3>Review:</h3>
+              <textarea placeholder="Write your review..." rows="5" />
+              <p className="rate">Rate: {"\u2B50\u2B50\u2B50\u2B50\u2606"}</p>
+            </div>
+          </aside>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

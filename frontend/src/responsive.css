@@ -1,7 +1,7 @@
 /* =========================================================
-   Responsive layout overrides
-   This file is imported last in main.jsx so it can safely
-   adjust the component styles for tablets and phones.
+   Responsive overrides
+   Imported last in main.jsx so these rules win over the
+   component-level styles.
    ========================================================= */
 
 /* ---------- Base ---------- */
@@ -13,8 +13,8 @@ body {
 }
 
 #root {
-  max-width: none;
   width: 100%;
+  max-width: none;
   margin: 0;
   padding: 0;
   text-align: left;
@@ -27,234 +27,99 @@ canvas {
   max-width: 100%;
 }
 
-/* Keep form controls inside their containers on every screen */
 #root input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
 #root select,
 #root textarea {
   max-width: 100%;
 }
 
-/* ---------- App shells ---------- */
-#root .container,
-#root .dashboard-container,
-#root .layout {
-  display: flex;
-  flex-direction: row;
-  width: 100%;
-  max-width: 100%;
-  min-height: 100vh;
-  height: auto;
+.no-scroll {
+  overflow: hidden !important;
 }
 
-#root .main-content,
-#root .main-section {
-  flex: 1;
-  min-width: 0;
+/* ---------- Shared shell ---------- */
+#root .app-shell {
   width: 100%;
-  padding: 20px;
+  max-width: 100%;
 }
 
 #root .main-content {
-  overflow-y: visible;
-}
-
-#root .content-section {
-  flex: 1;
   min-width: 0;
 }
 
 #root .navbar {
   flex-wrap: wrap;
-  gap: 12px;
-  padding: 0;
-}
-
-#root .navbar h1 {
-  margin: 0;
-  font-size: clamp(20px, 2.2vw, 26px);
-}
-
-#root .user-info {
-  min-width: 0;
-}
-
-#root .user-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 40vw;
 }
 
 /* ---------- Dashboard ---------- */
-#root .trans {
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 20px;
+#root .dashboard-grid {
+  min-width: 0;
 }
 
 #root .account-balances {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 15px;
+  min-width: 0;
 }
 
 #root .balance-card {
   min-width: 0;
 }
 
-#root .balance-amount {
-  font-size: clamp(16px, 1.6vw, 20px);
-  margin: 8px 0 0;
-}
-
 #root .finance-chart {
+  min-width: 0;
   overflow: hidden;
 }
 
 #root .chart-wrapper {
-  width: 100%;
-  height: 300px;
-}
-
-#root .recent-transactions {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-#root .transactions-table {
-  min-width: 520px;
-}
-
-#root .quick-actions-section {
-  flex: 1 1 240px;
   min-width: 0;
 }
 
+#root .recent-transactions {
+  min-width: 0;
+}
+
+#root .transactions-table {
+  min-width: 540px;
+}
+
 #root .quick-actions {
-  width: 100%;
-  max-width: 320px;
-  height: auto;
-  min-height: 170px;
+  min-width: 0;
 }
 
 #root .kyc-banner {
-  margin: 0 0 16px;
   flex-wrap: wrap;
 }
 
-/* ---------- Transactions page ---------- */
+/* ---------- Transactions ---------- */
+#root .transactions-layout {
+  min-width: 0;
+}
+
 #root .send-money-form {
-  width: 40%;
-  min-width: 280px;
+  min-width: 0;
 }
 
 #root .transactions-container {
   min-width: 0;
 }
 
-#root .transaction-item {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1.6fr) minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: 12px;
-}
-
-#root .transaction-icon {
-  margin-right: 0;
-}
-
-#root .transaction-details {
+/* ---------- Payments ---------- */
+#root .payment-layout,
+#root .merchant-layout {
   min-width: 0;
 }
 
-#root .transaction-name,
-#root .transaction-time {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-#root .transaction-id,
-#root .transaction-amount {
-  margin-left: 0;
-}
-
-#root .transaction-status {
-  margin-left: 0;
-  white-space: nowrap;
-}
-
-/* ---------- Transfer page ---------- */
-#root .transfer-container {
-  width: 100%;
-}
-
-#root .transfer-card {
-  width: 100%;
-  flex-wrap: wrap;
-  align-items: flex-start;
-}
-
-#root .transfer-form {
-  width: 100%;
-  max-width: 600px;
-  flex: 1 1 420px;
-}
-
-#root .transfer-card > .side-actions {
-  flex: 0 1 280px;
-}
-
-/* ---------- Bill payment page ---------- */
-#root .bill-payment-container {
-  width: 100%;
-  flex-wrap: wrap;
-  gap: 24px;
-}
-
-#root .bill-form {
-  width: 100%;
-  max-width: 450px;
-  flex: 1 1 320px;
-}
-
-#root .bill-payment-container > .side-actions {
-  flex: 1 1 220px;
-  width: auto;
-}
-
-#root .bill-payment-container .box {
-  width: 100%;
-  max-width: 280px;
-}
-
-/* ---------- Merchant payment page ---------- */
-#root .merchant-container {
-  width: 100%;
-  flex-wrap: wrap;
-  gap: 24px;
-}
-
-#root .merchant-box {
-  flex: 1 1 320px;
+#root .payment-form-card,
+#root .merchant-form-card {
   min-width: 0;
 }
 
-#root .merchant-tabs {
-  width: 100%;
-  flex-wrap: wrap;
+#root .payment-side,
+#root .merchant-side {
+  min-width: 0;
 }
 
-#root .merchant-sidebar {
-  flex: 1 1 280px;
-  width: 100%;
-  max-width: 500px;
-}
-
-#root .qr-box img {
-  width: 100%;
-  max-width: 240px;
-  height: auto;
+#root .qr-code {
+  max-width: 100%;
 }
 
 /* ---------- Off-canvas navigation ---------- */
@@ -266,11 +131,11 @@ canvas {
   display: none;
 }
 
-/* ---------- Desktop: keep navigation in place and scroll the content ---------- */
+/* =========================================================
+   Desktop: keep the sidebar in place and scroll content
+   ========================================================= */
 @media (min-width: 901px) {
-  #root .container,
-  #root .dashboard-container,
-  #root .layout {
+  #root .app-shell {
     height: 100vh;
     min-height: 100vh;
     overflow: hidden;
@@ -279,12 +144,11 @@ canvas {
   #root .sidebar {
     height: 100vh;
     min-height: 100vh;
-    overflow-y: auto;
     flex-shrink: 0;
+    overflow-y: auto;
   }
 
-  #root .main-content,
-  #root .main-section {
+  #root .main-content {
     height: 100vh;
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -292,59 +156,94 @@ canvas {
   }
 }
 
-/* ---------- Tablet ---------- */
+/* =========================================================
+   Tablet / small desktop
+   ========================================================= */
+@media (max-width: 1200px) {
+  #root .dashboard-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #root .dashboard-aside {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+  }
+
+  #root .quick-actions {
+    min-height: 200px;
+  }
+
+  #root .payment-layout,
+  #root .merchant-layout {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #root .payment-form-card,
+  #root .merchant-form-card {
+    width: 100%;
+    max-width: none;
+  }
+
+  #root .payment-side {
+    display: grid;
+    flex: none;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  #root .merchant-side {
+    display: grid;
+    flex: none;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  #root .transactions-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #root .send-money-form {
+    max-width: none;
+  }
+}
+
 @media (max-width: 1100px) {
   #root .account-balances {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  #root .quick-actions-section {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-
-  #root .quick-actions {
-    flex: 1 1 200px;
-    max-width: none;
-  }
-
-  #root .transfer-card > .side-actions {
-    flex: 1 1 100%;
-    width: 100%;
-    max-width: none;
-  }
-
-  #root .bill-payment-container > .side-actions {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-
-  #root .bill-payment-container .box {
-    flex: 1 1 200px;
-    max-width: none;
+  #root .transaction-item {
+    grid-template-columns: auto minmax(140px, 1.4fr) minmax(100px, 0.9fr) minmax(100px, 0.8fr) auto;
+    gap: 14px;
   }
 }
 
-/* ---------- Off-canvas sidebar for tablets/phones ---------- */
+/* =========================================================
+   Off-canvas sidebar for tablets and phones
+   ========================================================= */
 @media (max-width: 900px) {
-  #root .container,
-  #root .dashboard-container,
-  #root .layout {
+  #root .app-shell {
     flex-direction: column;
+    gap: 0;
+    height: auto;
+    min-height: 100vh;
+    padding-left: 0;
+    overflow: visible;
   }
 
   #root .sidebar {
     position: fixed;
     top: 0;
-    left: 0;
     bottom: 0;
-    width: min(280px, 82vw);
+    left: 0;
+    z-index: 1200;
+    width: min(300px, 84vw);
     height: 100%;
     min-height: 100vh;
-    padding: 20px;
-    padding-top: 72px;
+    padding: 0;
     overflow-y: auto;
-    z-index: 1200;
     transform: translateX(-105%);
     transition: transform 0.25s ease;
     box-shadow: 4px 0 24px rgba(15, 23, 42, 0.3);
@@ -354,108 +253,78 @@ canvas {
     transform: translateX(0);
   }
 
+  #root .sidebar-nav {
+    padding: 24px 14px 16px;
+  }
+
+  #root .sidebar-footer {
+    padding: 0 14px 24px;
+  }
+
   .sidebar-overlay {
     display: block;
     position: fixed;
     inset: 0;
-    background: rgba(15, 23, 42, 0.55);
     z-index: 1100;
-  }
-
-  .no-scroll {
-    overflow: hidden !important;
+    background: rgba(15, 23, 42, 0.55);
   }
 
   .mobile-menu-toggle {
     display: inline-flex;
-    align-items: center;
-    justify-content: center;
     position: fixed;
     top: 14px;
     left: 14px;
     z-index: 1300;
+    align-items: center;
+    justify-content: center;
     width: 44px;
     height: 44px;
     padding: 0;
+    color: #0f172a;
+    background: #ffffff;
     border: 1px solid #cbd5e1;
     border-radius: 10px;
-    background: #ffffff;
-    color: #0f172a;
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.15);
     font-size: 22px;
     line-height: 1;
     cursor: pointer;
-    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.15);
   }
 
-  #root .main-content,
-  #root .main-section {
+  #root .main-content {
+    height: auto;
+    min-height: 100vh;
     padding: 16px;
     padding-top: 20px;
+    overflow: visible;
   }
 
   #root .navbar {
-    padding-left: 56px;
-    min-height: 44px;
+    min-height: 88px;
+    padding: 0 22px 0 64px;
+    margin-bottom: 18px;
   }
 
-  #root .content-section {
-    padding-right: 0;
+  #root .navbar h1 {
+    font-size: clamp(20px, 4vw, 26px);
   }
 
-  #root .send-money-form {
-    width: 100%;
-    min-width: 0;
+  #root .avatar {
+    width: 46px;
+    height: 46px;
+    font-size: 17px;
   }
 
-  #root .transfer-form,
-  #root .bill-form,
-  #root .merchant-box,
-  #root .merchant-sidebar {
-    flex-basis: 100%;
-    max-width: none;
+  #root .icon-button {
+    width: 42px;
+    height: 42px;
   }
 
-  #root .finance-chart {
-    padding: 16px;
+  #root .dashboard-aside {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   #root .chart-wrapper {
     height: 260px;
-  }
-}
-
-/* ---------- Mobile ---------- */
-@media (max-width: 640px) {
-  #root .main-content,
-  #root .main-section {
-    padding: 12px;
-    padding-top: 16px;
-  }
-
-  #root .navbar {
-    padding-left: 52px;
-  }
-
-  #root .user-name {
-    max-width: 32vw;
-  }
-
-  #root .account-balances {
-    grid-template-columns: 1fr;
-  }
-
-  #root .quick-actions-section {
-    flex-direction: column;
-  }
-
-  #root .quick-actions {
-    flex: 0 0 auto;
-    max-width: none;
-    min-height: 0;
-  }
-
-  #root .transactions-table {
-    min-width: 460px;
   }
 
   #root .transaction-item {
@@ -463,9 +332,10 @@ canvas {
     grid-template-areas:
       "icon details status"
       "icon id amount";
-    row-gap: 4px;
-    column-gap: 10px;
-    padding: 12px;
+    row-gap: 5px;
+    column-gap: 12px;
+    min-height: 0;
+    padding: 16px;
   }
 
   #root .transaction-icon {
@@ -478,9 +348,8 @@ canvas {
 
   #root .transaction-id {
     grid-area: id;
+    color: #8a94a3;
     font-size: 12px;
-    font-weight: 500;
-    color: #6b7280;
   }
 
   #root .transaction-amount {
@@ -493,35 +362,140 @@ canvas {
     text-align: right;
   }
 
-  #root .transactions-header,
-  #root .transactions-tabs {
-    flex-wrap: wrap;
+  #root .payment-side {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  #root .review-card {
+    grid-column: 1 / -1;
+  }
+}
+
+/* =========================================================
+   Mobile
+   ========================================================= */
+@media (max-width: 700px) {
+  #root .main-content {
+    padding: 12px;
+    padding-top: 16px;
+  }
+
+  #root .navbar {
+    min-height: 78px;
+    padding: 0 16px 0 60px;
+    margin-bottom: 14px;
+  }
+
+  #root .navbar h1 {
+    font-size: 20px;
+  }
+
+  #root .navbar-actions {
     gap: 8px;
   }
 
-  #root .form-actions,
-  #root .button-group {
+  #root .avatar {
+    width: 42px;
+    height: 42px;
+    font-size: 15px;
+  }
+
+  #root .icon-button {
+    width: 38px;
+    height: 38px;
+  }
+
+  #root .account-balances {
+    grid-template-columns: 1fr;
+  }
+
+  #root .dashboard-aside {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #root .quick-actions {
+    min-height: 0;
+  }
+
+  #root .quick-actions-empty {
+    display: none;
+  }
+
+  #root .chart-wrapper {
+    height: 230px;
+  }
+
+  #root .finance-chart,
+  #root .recent-transactions {
+    padding: 16px;
+  }
+
+  #root .transactions-table {
+    min-width: 480px;
+  }
+
+  #root .payment-form-card,
+  #root .merchant-form-card {
+    padding: 28px 20px 30px;
+  }
+
+  #root .form-tabs {
+    gap: 18px;
+    margin-bottom: 30px;
+  }
+
+  #root .form-tabs a {
+    font-size: 16px;
+  }
+
+  #root .merchant-fields {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  #root .payment-side,
+  #root .merchant-side {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  #root .review-card {
+    grid-column: auto;
+  }
+
+  #root .side-card {
+    min-height: 0;
+  }
+
+  #root .review-card {
+    min-height: 0;
+  }
+
+  #root .form-actions {
     flex-direction: column;
     gap: 10px;
+    margin-top: 28px;
   }
 
-  #root .form-actions button,
-  #root .button-group button {
+  #root .form-actions button {
     width: 100%;
   }
 
-  #root .side-actions,
-  #root .bill-payment-container > .side-actions {
-    flex-direction: column;
+  #root .send-money-form {
+    padding: 22px 18px;
   }
 
-  #root .bill-payment-container .box {
-    flex: 0 0 auto;
+  #root .transactions-header h2 {
+    font-size: 20px;
   }
 
-  #root .quick-actions button,
-  #root .box button {
-    width: 100%;
+  #root .transactions-tabs {
+    gap: 20px;
+  }
+
+  #root .balance-summary h2 {
+    font-size: 28px;
   }
 
   #root .kyc-banner {
@@ -529,24 +503,78 @@ canvas {
     align-items: flex-start;
   }
 
-  #root .finance-chart,
-  #root .recent-transactions {
-    padding: 14px;
+  /* Auth */
+  #root .auth-page,
+  #root .auth-page.login-page,
+  #root .auth-page.register-page {
+    padding: 40px 16px 32px;
   }
 
-  #root .chart-wrapper {
-    height: 230px;
+  #root .auth-title,
+  #root .register-page .auth-title {
+    margin-bottom: 28px;
+    font-size: 28px;
+  }
+
+  #root .login-form {
+    gap: 20px;
+  }
+
+  #root .auth-form {
+    gap: 16px;
+  }
+
+  #root .auth-file-label {
+    height: 56px;
+    padding: 0 14px;
+    font-size: 16px;
+  }
+
+  #root .auth-forgot-row {
+    font-size: 14px;
+  }
+
+  #root .auth-submit {
+    height: 50px;
+    font-size: 16px;
+  }
+
+  #root .auth-footer {
+    margin-top: 24px;
+    font-size: 14px;
+  }
+
+  #root .auth-footer .auth-link-button {
+    font-size: 14px;
   }
 }
 
-/* ---------- Small phones ---------- */
+/* =========================================================
+   Small phones
+   ========================================================= */
 @media (max-width: 420px) {
+  #root .main-content {
+    padding: 10px;
+    padding-top: 14px;
+  }
+
+  #root .navbar {
+    padding-left: 56px;
+  }
+
   #root .navbar h1 {
     font-size: 18px;
   }
 
-  #root .user-name {
-    max-width: 28vw;
+  #root .avatar {
+    width: 38px;
+    height: 38px;
+    font-size: 14px;
+  }
+
+  #root .icon-button {
+    width: 34px;
+    height: 34px;
   }
 
   #root .balance-amount {
@@ -554,13 +582,38 @@ canvas {
   }
 
   #root .transactions-table {
-    min-width: 420px;
+    min-width: 440px;
   }
 
-  #root .send-money-form,
-  #root .transfer-form,
-  #root .bill-form,
-  #root .merchant-box {
-    padding: 16px;
+  #root .auth-page,
+  #root .auth-page.login-page,
+  #root .auth-page.register-page {
+    padding: 32px 12px 24px;
+  }
+
+  #root .auth-title,
+  #root .register-page .auth-title {
+    margin-bottom: 24px;
+    font-size: 24px;
+  }
+
+  #root .auth-file-label {
+    height: 56px;
+    padding: 0 14px;
+    font-size: 16px;
+  }
+
+  #root .auth-submit {
+    height: 48px;
+    font-size: 15px;
+  }
+
+  #root .auth-footer {
+    margin-top: 20px;
+    font-size: 13px;
+  }
+
+  #root .auth-footer .auth-link-button {
+    font-size: 13px;
   }
 }

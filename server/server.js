@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import routes from './routes/index.js';
@@ -55,12 +56,23 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Ensure uploads directory exists
-import fs from 'fs';
-const uploadDir = path.join(__dirname, 'uploads/kyc');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+// Ensure uploads directories exist
+const uploadsDir = path.join(__dirname, 'uploads');
+const kycUploadDir = path.join(uploadsDir, 'kyc');
+const profileUploadDir = path.join(uploadsDir, 'profiles');
+
+for (const dir of [kycUploadDir, profileUploadDir]) {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
 }
+
+// Profile pictures are served publicly; KYC documents are not.
+app.use('/uploads/profiles', express.static(profileUploadDir, {
+  setHeaders: (res) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  }
+}));
 
 // API Documentation route
 app.get('/api-docs', (req, res) => {
@@ -71,6 +83,10 @@ app.get('/api-docs', (req, res) => {
         register: 'POST /api/auth/register',
         login: 'POST /api/auth/login',
         me: 'GET /api/auth/me',
+        updateProfile: 'PUT /api/auth/me',
+        deleteProfile: 'DELETE /api/auth/me',
+        updateAvatar: 'PUT /api/auth/me/avatar',
+        deleteAvatar: 'DELETE /api/auth/me/avatar',
         changePassword: 'POST /api/auth/change-password',
         mfa: {
           send: 'POST /api/auth/send-mfa',
@@ -154,6 +170,6 @@ app.listen(PORT, () => {
   🚀 Server running on port ${PORT}
   🌐 Local: http://localhost:${PORT}
   📚 API Docs: http://localhost:${PORT}/api-docs
-  📁 Uploads directory: ${uploadDir}
+  📁 Uploads directory: ${uploadsDir}
   `);
 });

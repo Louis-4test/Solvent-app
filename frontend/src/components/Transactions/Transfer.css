@@ -1,140 +1,47 @@
-/* General Container */
-.container {
-  display: flex;
+/* Fund transfer page additions */
+
+.recent-transfers {
+  margin-top: 38px;
+  padding-top: 24px;
+  border-top: 1px solid #edf2f7;
 }
 
-.sidebar {
-  width: 250px;
-  padding: 20px;
-  background-color: #2c3e50;
-  color: white;
+.recent-transfers-title {
+  margin: 0 0 12px;
+  color: #111827;
+  font-size: 18px;
+  font-weight: 700;
 }
 
-.sidebar h2 {
-  text-align: center;
+.recent-transfers-scroll {
+  width: 100%;
+  overflow-x: auto;
 }
 
-.nav-links {
-  margin-top: 20px;
+.recent-transfers-table {
+  width: 100%;
+  border-collapse: collapse;
 }
 
-.nav-links a {
-  display: block;
-  color: white;
-  margin-bottom: 10px;
-  text-decoration: none;
+.recent-transfers-table th {
+  padding: 10px 8px;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
 }
 
-.nav-links .active {
-  font-weight: bold;
+.recent-transfers-table td {
+  padding: 12px 8px;
+  color: #374151;
+  font-size: 13px;
+  text-align: left;
+  border-top: 1px solid #edf2f7;
 }
 
-.main-content {
-  flex: 1;
-  padding: 20px;
-}
-
-.navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.navbar h1 {
-  font-size: 24px;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-}
-
-.card {
-  margin-right: 10px;
-}
-
-
-.transfer-container {
-  display: flex;
-  justify-content: space-between;
-}
-
-.transfer-card {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  gap: 20px;
-}
-
-.transfer-form {
-  width: 600px;
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.form-tabs {
-  display: flex;
-  margin-bottom: 20px;
-}
-
-.form-tabs span {
-  margin-right: 20px;
-  cursor: pointer;
-}
-
-.form-tabs .active-tab {
-  font-weight: bold;
-  border-bottom: 2px solid #000;
-}
-
-label {
-  font-size: 14px;
-  margin-bottom: 5px;
-  display: block;
-}
-
-input {
-  width: 95%;
-  padding: 12px;
-  margin-bottom: 20px;
-  border-radius: 8px;
-  border: 1px solid #ddd;
-}
-
-/* Adjust the button to match others */
-.transfer-button {
-  width: 150px;
-  padding: 10px 20px;
-  border: none;
-  background-color: #070C90;
-  color: white;
-  cursor: pointer;
-  border-radius: 12px;
-}
-
-button:hover {
-  background-color: #2980b9;
-}
-
-.form-actions {
-  display: flex;
-  justify-content: space-between;
-}
-
-.side-actions {
-  width: 280px;
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-textarea {
-  width: 90%;
-  padding: 10px;
-  border-radius: 12px;
-  border: 1px solid #ddd;
+.recent-transfers-table td:last-child {
+  color: #111827;
+  font-weight: 600;
+  white-space: nowrap;
 }

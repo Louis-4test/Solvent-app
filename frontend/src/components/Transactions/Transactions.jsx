@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { getMyTransactions } from "../../services/transferAPI";
+import { Link, useNavigate } from "react-router-dom";
+import { getMyTransactions, transferFunds } from "../../services/transferAPI";
 import Sidebar, { TopNavbar } from "../Layout/Sidebar";
 import "./Transactions.css";
 
@@ -8,7 +9,7 @@ const FALLBACK_TRANSACTIONS = [
   { id: 2, name: "Bank Transfer", time: "15:29", transactionId: "123456789", amount: "12000", status: "Approved" },
   { id: 3, name: "Bank Transfer", time: "15:29", transactionId: "123456789", amount: "12000", status: "Approved" },
   { id: 4, name: "Bank Transfer", time: "15:29", transactionId: "123456789", amount: "12000", status: "Declined" },
-  { id: 5, name: "Bank Transfer", time: "15:29", transactionId: "123456789", amount: "12000", status: "Approved" },
+  { id: 5, name: "Bank Transfer", time: "15:29", transactionId: "123456789", amount: "12000", status: "Approved" }
 ];
 
 const statusLabel = (status) => {
@@ -16,61 +17,133 @@ const statusLabel = (status) => {
   return map[status] || status;
 };
 
+const formatTxn = (t) => ({
+  id: t.id,
+  name: `${t.Sender?.fullName || "Transfer"} \u2192 ${t.Recipient?.fullName || "Account"}`,
+  time: new Date(t.created_at || t.createdAt).toLocaleString(),
+  transactionId: t.reference || `TXN-${t.id}`,
+  amount: `XAF ${Number(t.amount).toLocaleString()}`,
+  status: statusLabel(t.status)
+});
+
 const Transactions = () => {
+  const navigate = useNavigate();
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [amount, setAmount] = useState("");
+  const [recipientPhone, setRecipientPhone] = useState("");
+  const [sending, setSending] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
-  useEffect(() => {
+  const loadTransactions = () => {
+    setLoading(true);
     getMyTransactions()
       .then((res) => {
-        if (res.success) {
-          setTransactions(res.data);
-        }
+        if (res.success) setTransactions(res.data);
       })
       .catch((err) => {
-        console.warn('Could not load transactions:', err.message);
+        console.warn("Could not load transactions:", err.message);
         setTransactions(FALLBACK_TRANSACTIONS);
       })
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadTransactions();
   }, []);
 
-  const displayTransactions = transactions.length > 0 ? transactions.map((t) => ({
-    id: t.id,
-    name: `${t.Sender?.fullName || "Transfer"} \u2192 ${t.Recipient?.fullName || "Account"}`,
-    time: new Date(t.created_at || t.createdAt).toLocaleString(),
-    transactionId: t.reference || `TXN-${t.id}`,
-    amount: `XAF ${Number(t.amount).toLocaleString()}`,
-    status: statusLabel(t.status)
-  })) : FALLBACK_TRANSACTIONS;
+  const displayTransactions = transactions.length > 0 ? transactions.map(formatTxn) : FALLBACK_TRANSACTIONS;
+
+  const handleQuickSend = async (e) => {
+    e.preventDefault();
+    setError("");
+    setMessage("");
+
+    if (!amount || Number(amount) <= 0) {
+      setError("Please enter a valid amount.");
+      return;
+    }
+    if (!recipientPhone) {
+      setError("Please enter a recipient phone number.");
+      return;
+    }
+
+    try {
+      setSending(true);
+      const res = await transferFunds({ recipientPhone, amount, channel: "p2p" });
+      setMessage(res.message || "Transfer completed successfully.");
+      setAmount("");
+      setRecipientPhone("");
+      loadTransactions();
+    } catch (err) {
+      setError(err.message || "Transfer failed. Please try again.");
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
-    <div className="container">
+    <div className="app-shell">
       <Sidebar />
 
-      {/* Main Content */}
-      <div className="main-content">
-        <TopNavbar title="Transactions" />
+      <main className="main-content">
+        <TopNavbar title="Dashboard" />
 
-        {/* Account Balance */}
-        <div className="account-balance">XAF 230,000</div>
-        <div className="wallet-balance">Wallet Balance: XAF 78,500</div>
+        <section className="balance-summary" aria-label="Account balance">
+          <h2>XAF 230,000</h2>
+          <p>Total Balance</p>
+        </section>
 
-        <div className="trans">
-          {/* Send Money Form */}
-          <div className="send-money-form">
-            <h3>Send Money</h3>
-            <label>Enter the Amount</label>
-            <input type="number" placeholder="Amount" />
-            <label>Bank/Momo/Wallet Number</label>
-            <input type="text" placeholder="123456789" />
-            <button>Send</button>
-          </div>
+        <div className="transactions-layout">
+          <form className="send-money-form" onSubmit={handleQuickSend}>
+            <div className="send-form-tabs">
+              <span className="active">Send Money</span>
+              <Link to="/merchant-payment">Merchant Pay</Link>
+            </div>
 
-          {/* Transactions */}
-          <div className="transactions-container">
+            <p className="send-form-heading">Enter the Amount</p>
+            <p className="transfer-charge">Transfer Charges rate 2%</p>
+
+            <label htmlFor="quick-amount">Amount</label>
+            <input
+              id="quick-amount"
+              type="number"
+              min="0"
+              placeholder="8000"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+
+            <label htmlFor="quick-phone">Bank/Momo/Wallet Number</label>
+            <input
+              id="quick-phone"
+              type="text"
+              placeholder="123456789"
+              value={recipientPhone}
+              onChange={(e) => setRecipientPhone(e.target.value)}
+            />
+
+            {error && <p className="form-error" role="alert">{error}</p>}
+            {message && <p className="form-success" role="status">{message}</p>}
+
+            <div className="send-actions">
+              <button type="button" className="send-back" onClick={() => navigate("/")}>{"< Back"}</button>
+              <button type="submit" className="send-btn" disabled={sending}>
+                {sending ? "Sending..." : "Send"}
+              </button>
+            </div>
+
+            <div className="wallet-summary">
+              <span>Wallet Balance</span>
+              <strong>XAF 78,500</strong>
+            </div>
+          </form>
+
+          <section className="transactions-container">
             <div className="transactions-header">
               <h2>Past Transactions</h2>
-              <span className="export-csv">+ Export CSV</span>
+              <button type="button" className="export-csv">+ Export CSV</button>
             </div>
 
             <div className="transactions-tabs">
@@ -79,10 +152,10 @@ const Transactions = () => {
             </div>
 
             <div className="transactions-list">
-              {loading && <p>Loading transactions...</p>}
+              {loading && <p className="transactions-empty">Loading transactions...</p>}
               {!loading && displayTransactions.map((transaction) => (
                 <div key={transaction.id} className="transaction-item">
-                  <span className="transaction-icon">{"\u2B07\uFE0F"}</span>
+                  <span className="transaction-icon" aria-hidden="true">{"\u2193"}</span>
                   <div className="transaction-details">
                     <div className="transaction-name">{transaction.name}</div>
                     <div className="transaction-time">{transaction.time}</div>
@@ -93,9 +166,9 @@ const Transactions = () => {
                 </div>
               ))}
             </div>
-          </div>
+          </section>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

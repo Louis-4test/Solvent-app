@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate, useSearchParams, Link as RouterLink } from "react-router-dom";
 import { TextField, Button, Typography, Box, Alert } from "@mui/material";
 import authAPI from "../../services/authAPI";
+import { PasswordVisibilityAdornment } from "./PasswordInput";
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -10,6 +11,8 @@ export default function ResetPassword() {
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -83,23 +86,45 @@ export default function ResetPassword() {
         <form onSubmit={handleSubmit}>
           <TextField
             label="New Password"
-            type="password"
+            type={showPassword ? "text" : "password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             fullWidth
             required
             autoComplete="new-password"
             sx={{ mb: 2 }}
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <PasswordVisibilityAdornment
+                    visible={showPassword}
+                    onToggle={() => setShowPassword((current) => !current)}
+                    disabled={isLoading}
+                  />
+                )
+              }
+            }}
           />
           <TextField
             label="Confirm New Password"
-            type="password"
+            type={showConfirmPassword ? "text" : "password"}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             fullWidth
             required
             autoComplete="new-password"
             sx={{ mb: 2 }}
+            slotProps={{
+              input: {
+                endAdornment: (
+                  <PasswordVisibilityAdornment
+                    visible={showConfirmPassword}
+                    onToggle={() => setShowConfirmPassword((current) => !current)}
+                    disabled={isLoading}
+                  />
+                )
+              }
+            }}
           />
 
           {error && (
