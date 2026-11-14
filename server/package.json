@@ -10,7 +10,8 @@
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "db:migrate": "sequelize-cli db:migrate",
     "db:migrate:undo": "sequelize-cli db:migrate:undo",
-    "db:seed": "node migrations/seeders/20261028000000-demo-data.js"
+    "db:seed": "node migrations/seeders/20261028000000-demo-data.js",
+    "db:promote-admin": "node scripts/promote-admin.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",

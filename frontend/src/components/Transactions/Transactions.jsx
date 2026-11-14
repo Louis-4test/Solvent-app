@@ -17,13 +17,16 @@ const statusLabel = (status) => {
   return map[status] || status;
 };
 
-const formatTxn = (t) => ({
+const formatTxn = (t, withReceipt = false) => ({
   id: t.id,
   name: `${t.Sender?.fullName || "Transfer"} \u2192 ${t.Recipient?.fullName || "Account"}`,
   time: new Date(t.created_at || t.createdAt).toLocaleString(),
   transactionId: t.reference || `TXN-${t.id}`,
   amount: `XAF ${Number(t.amount).toLocaleString()}`,
-  status: statusLabel(t.status)
+  status: statusLabel(t.status),
+  receiptLink: withReceipt && t.reference
+    ? `/receipts/${encodeURIComponent(t.reference)}`
+    : null
 });
 
 const Transactions = () => {
@@ -53,7 +56,10 @@ const Transactions = () => {
     loadTransactions();
   }, []);
 
-  const displayTransactions = transactions.length > 0 ? transactions.map(formatTxn) : FALLBACK_TRANSACTIONS;
+  const usingLiveData = transactions.length > 0;
+  const displayTransactions = usingLiveData
+    ? transactions.map((transaction) => formatTxn(transaction, true))
+    : FALLBACK_TRANSACTIONS;
 
   const handleQuickSend = async (e) => {
     e.preventDefault();
@@ -160,7 +166,13 @@ const Transactions = () => {
                     <div className="transaction-name">{transaction.name}</div>
                     <div className="transaction-time">{transaction.time}</div>
                   </div>
-                  <div className="transaction-id">ID {transaction.transactionId}</div>
+                  {transaction.receiptLink ? (
+                    <Link className="transaction-id transaction-receipt-link" to={transaction.receiptLink}>
+                      Receipt · {transaction.transactionId}
+                    </Link>
+                  ) : (
+                    <div className="transaction-id">ID {transaction.transactionId}</div>
+                  )}
                   <div className="transaction-amount">{transaction.amount}</div>
                   <div className={`transaction-status ${transaction.status.toLowerCase()}`}>{transaction.status}</div>
                 </div>

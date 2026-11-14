@@ -2,7 +2,8 @@ import User from './User.js';
 import Notification from './Notification.js';
 import Payment from './Payment.js';
 import Transaction from './Transaction.js';
-import KYC from './kyc.js';  
+import KYC from './kyc.js';
+import Merchant from './Merchant.js';
 
 // Set up model associations
 User.hasMany(Notification, { foreignKey: 'user_id' });
@@ -16,14 +17,16 @@ User.hasMany(Transaction, { foreignKey: 'recipient_id', as: 'ReceivedTransaction
 Transaction.belongsTo(User, { foreignKey: 'sender_id', as: 'Sender' });
 Transaction.belongsTo(User, { foreignKey: 'recipient_id', as: 'Recipient' });
 
-// Add KYC association
-User.hasOne(KYC, { foreignKey: 'userId' });
-KYC.belongsTo(User, { foreignKey: 'userId' });
+// KYC verification records
+User.hasMany(KYC, { foreignKey: 'user_id', as: 'KYCSubmissions' });
+KYC.belongsTo(User, { foreignKey: 'user_id', as: 'Applicant' });
+KYC.belongsTo(User, { foreignKey: 'reviewed_by', as: 'Reviewer' });
 
 export {
   User,
   Notification,
   Payment,
   Transaction,
-  KYC  
+  KYC,
+  Merchant
 };

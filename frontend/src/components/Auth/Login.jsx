@@ -73,6 +73,9 @@ export default function Login() {
         case 'UNVERIFIED_ACCOUNT':
           errorMessage = 'Account not verified. Please check your email.';
           break;
+        case 'ACCOUNT_SUSPENDED':
+          errorMessage = error.message || 'This account has been suspended. Please contact support.';
+          break;
         case 'EMAIL_FAILURE':
           errorMessage = 'Failed to send verification email. Please try again later.';
           break;

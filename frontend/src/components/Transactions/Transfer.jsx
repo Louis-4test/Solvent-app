@@ -21,6 +21,7 @@ const Transfer = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [recentTransactions, setRecentTransactions] = useState([]);
+  const [receipt, setReceipt] = useState(null);
 
   useEffect(() => {
     getMyTransactions()
@@ -34,6 +35,7 @@ const Transfer = () => {
     e.preventDefault();
     setError("");
     setMessage("");
+    setReceipt(null);
 
     if (!amount || Number(amount) <= 0) {
       setError("Please enter a valid amount.");
@@ -53,6 +55,7 @@ const Transfer = () => {
         narration
       });
       setMessage(res.message || "Transfer completed successfully.");
+      setReceipt(res.data?.receipt || null);
       setAmount("");
       setRecipientPhone("");
       setNarration("");
@@ -67,6 +70,12 @@ const Transfer = () => {
   };
 
   const formatAmount = (value) => `XAF ${Number(value).toLocaleString()}`;
+
+  const formatReceiptAmount = (value) =>
+    `${value.currency || "XAF"} ${Number(value.amount || 0).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })}`;
 
   return (
     <div className="app-shell">
@@ -131,6 +140,17 @@ const Transfer = () => {
 
             {error && <p className="form-error" role="alert">{error}</p>}
             {message && <p className="form-success" role="status">{message}</p>}
+
+            {receipt && (
+              <div className="payment-receipt-success">
+                <div>
+                  <span>Transfer successful</span>
+                  <strong>{formatReceiptAmount(receipt)}</strong>
+                  <small>Reference {receipt.reference}</small>
+                </div>
+                <Link to={`/receipts/${encodeURIComponent(receipt.reference)}`}>View receipt</Link>
+              </div>
+            )}
 
             <div className="form-actions">
               <button type="button" className="back-btn" onClick={() => navigate("/")}>

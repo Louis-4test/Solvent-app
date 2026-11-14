@@ -1,8 +1,10 @@
 import sequelize from '../config/db.js';
 import crypto from 'crypto';
+import { Op } from 'sequelize';
 import Transaction from '../models/Transaction.js';
 import User from '../models/User.js';
 import { createNotificationForUser } from './notificationController.js';
+import { buildTransactionReceipt } from '../utils/receipts.js';
 
 const SAFE_USER_ATTRS = ['id', 'fullName', 'email', 'phone'];
 
@@ -138,7 +140,10 @@ export const transferFunds = async (req, res) => {
     return res.status(201).json({
       success: true,
       message: `Successfully transferred XAF ${amount} to ${recipient.fullName}`,
-      data: created
+      data: {
+        ...created.toJSON(),
+        receipt: created ? buildTransactionReceipt(created) : null
+      }
     });
 
   } catch (error) {
@@ -154,7 +159,7 @@ export const getMyTransactions = async (req, res) => {
   try {
     const transactions = await Transaction.findAll({
       where: {
-        [sequelize.Op.or]: [
+        [Op.or]: [
           { sender_id: req.user.id },
           { recipient_id: req.user.id }
         ]
@@ -178,13 +183,27 @@ export const getMyTransactions = async (req, res) => {
 
 export const getTransactions = async (req, res) => {
   try {
-    const { userId } = req.params;
-    
+    const requestedUserId = Number.parseInt(req.params.userId, 10);
+
+    if (!Number.isInteger(requestedUserId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid user id'
+      });
+    }
+
+    if (requestedUserId !== req.user.id && !req.user.isAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: 'You do not have permission to view these transactions'
+      });
+    }
+
     const transactions = await Transaction.findAll({
       where: {
-        [sequelize.Op.or]: [
-          { sender_id: userId },
-          { recipient_id: userId }
+        [Op.or]: [
+          { sender_id: requestedUserId },
+          { recipient_id: requestedUserId }
         ]
       },
       order: [['created_at', 'DESC']],
@@ -218,9 +237,22 @@ export const getTransactionById = async (req, res) => {
       });
     }
 
+    const isParticipant =
+      transaction.sender_id === req.user.id || transaction.recipient_id === req.user.id;
+
+    if (!isParticipant && !req.user.isAdmin) {
+      return res.status(404).json({
+        success: false,
+        message: 'Transaction not found'
+      });
+    }
+
     return res.status(200).json({
       success: true,
-      data: transaction
+      data: {
+        ...transaction.toJSON(),
+        receipt: buildTransactionReceipt(transaction)
+      }
     });
   } catch (error) {
     return res.status(500).json({ 
