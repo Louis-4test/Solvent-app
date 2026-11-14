@@ -1,7 +1,9 @@
 /* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { logout, getUser } from "../../utils/auth";
+import { Box, Divider, Menu, MenuItem, Typography } from "@mui/material";
+import { logout, getUser, USER_UPDATED_EVENT } from "../../utils/auth";
+import { resolveMediaUrl } from "../../services/api";
 import "./Layout.css";
 
 const BellIcon = () => (
@@ -45,7 +47,7 @@ const NAV_LINKS = [
   {
     to: "/merchant-payment",
     label: "Merchant Payment",
-    icon: "/shop_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.png"
+    icon: "/add_shopping_cart_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.png"
   },
   {
     to: "/notifications",
@@ -63,6 +65,7 @@ const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [user, setUser] = useState(getUser());
 
   // Close the mobile drawer whenever the route changes.
   useEffect(() => {
@@ -82,6 +85,17 @@ const Sidebar = () => {
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Keep the sidebar profile card in sync with profile updates.
+  useEffect(() => {
+    const syncUser = () => setUser(getUser());
+    window.addEventListener(USER_UPDATED_EVENT, syncUser);
+    window.addEventListener("storage", syncUser);
+    return () => {
+      window.removeEventListener(USER_UPDATED_EVENT, syncUser);
+      window.removeEventListener("storage", syncUser);
+    };
   }, []);
 
   const handleLogout = () => {
@@ -141,6 +155,26 @@ const Sidebar = () => {
         </nav>
 
         <div className="sidebar-footer">
+          <Link
+            to="/profile"
+            className={`sidebar-profile-link${location.pathname === "/profile" ? " active" : ""}`}
+            aria-label="Open your profile"
+            aria-current={location.pathname === "/profile" ? "page" : undefined}
+            onClick={() => setMobileOpen(false)}
+          >
+            <span className="sidebar-profile-avatar" aria-hidden="true">
+              {user?.avatarUrl ? (
+                <img src={resolveMediaUrl(user.avatarUrl)} alt="" />
+              ) : (
+                getInitials(user)
+              )}
+            </span>
+            <span className="sidebar-profile-info">
+              <strong>{user?.fullName || "My Profile"}</strong>
+              <small>{user?.email || "View profile details"}</small>
+            </span>
+          </Link>
+
           <a
             href="#"
             onClick={(e) => { e.preventDefault(); handleLogout(); }}
@@ -167,7 +201,27 @@ const getInitials = (user) => {
 };
 
 const TopNavbar = ({ title, variant = "default" }) => {
-  const user = getUser();
+  const navigate = useNavigate();
+  const [user, setUser] = useState(getUser());
+  const [menuAnchor, setMenuAnchor] = useState(null);
+
+  useEffect(() => {
+    const syncUser = () => setUser(getUser());
+    window.addEventListener(USER_UPDATED_EVENT, syncUser);
+    window.addEventListener("storage", syncUser);
+    return () => {
+      window.removeEventListener(USER_UPDATED_EVENT, syncUser);
+      window.removeEventListener("storage", syncUser);
+    };
+  }, []);
+
+  const closeMenu = () => setMenuAnchor(null);
+
+  const handleLogout = () => {
+    closeMenu();
+    logout();
+    navigate("/login", { replace: true });
+  };
 
   return (
     <header className={`navbar${variant === "muted" ? " navbar-muted" : ""}`}>
@@ -176,9 +230,63 @@ const TopNavbar = ({ title, variant = "default" }) => {
         <Link to="/notifications" className="icon-button" aria-label="Notifications">
           <BellIcon />
         </Link>
-        <span className="avatar" title={user?.fullName || "User"}>
-          {getInitials(user)}
-        </span>
+        <button
+          type="button"
+          className="avatar-button"
+          onClick={(event) => setMenuAnchor(event.currentTarget)}
+          aria-label="Open profile menu"
+          aria-haspopup="menu"
+          aria-expanded={Boolean(menuAnchor)}
+        >
+          <span className="avatar" title={user?.fullName || "User"}>
+            {user?.avatarUrl ? (
+              <img src={resolveMediaUrl(user.avatarUrl)} alt="" />
+            ) : (
+              getInitials(user)
+            )}
+          </span>
+        </button>
+        <Menu
+          anchorEl={menuAnchor}
+          open={Boolean(menuAnchor)}
+          onClose={closeMenu}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+          transformOrigin={{ vertical: "top", horizontal: "right" }}
+          slotProps={{
+            paper: {
+              sx: {
+                mt: 1,
+                minWidth: 240,
+                borderRadius: 2,
+                boxShadow: 4
+              }
+            }
+          }}
+        >
+          <Box className="profile-menu-summary">
+            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+              {user?.fullName || "Your profile"}
+            </Typography>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ display: "block", wordBreak: "break-word" }}
+            >
+              {user?.email || "View account details"}
+            </Typography>
+          </Box>
+          <Divider />
+          <MenuItem onClick={() => { closeMenu(); navigate("/profile"); }}>
+            My Profile
+          </MenuItem>
+          <MenuItem onClick={() => { closeMenu(); navigate("/settings"); }}>
+            Settings
+          </MenuItem>
+          <Divider />
+          <MenuItem onClick={handleLogout} sx={{ color: "error.main" }}>
+            Log out
+          </MenuItem>
+        </Menu>
       </div>
     </header>
   );

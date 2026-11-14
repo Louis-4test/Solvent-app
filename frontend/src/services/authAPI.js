@@ -47,6 +47,43 @@ export default {
     return response.data;
   },
 
+  updateProfile: async (profileData) => {
+    const response = await api.put('/auth/me', profileData);
+    if (!response.data.success) {
+      throw new Error(response.data.error || response.data.message || 'Profile update failed');
+    }
+    return response.data;
+  },
+
+  deleteProfile: async (password) => {
+    const response = await api.delete('/auth/me', { data: { password } });
+    if (!response.data.success) {
+      throw new Error(response.data.error || response.data.message || 'Account deletion failed');
+    }
+    return response.data;
+  },
+
+  uploadAvatar: async (file) => {
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    const response = await api.put('/auth/me/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    if (!response.data.success) {
+      throw new Error(response.data.error || response.data.message || 'Profile picture upload failed');
+    }
+    return response.data;
+  },
+
+  removeAvatar: async () => {
+    const response = await api.delete('/auth/me/avatar');
+    if (!response.data.success) {
+      throw new Error(response.data.error || response.data.message || 'Profile picture removal failed');
+    }
+    return response.data;
+  },
+
   sendMFACode: async (email) => {
     const response = await api.post('/auth/send-mfa', { email });
     if (!response.data.success) {

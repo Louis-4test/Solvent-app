@@ -23,6 +23,10 @@ const User = sequelize.define('User', {
     allowNull: false,
     index: true 
   },
+  avatarUrl: {
+    type: DataTypes.STRING(500),
+    allowNull: true
+  },
   password: {
     type: DataTypes.STRING,
     allowNull: false
