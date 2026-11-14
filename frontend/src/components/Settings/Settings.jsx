@@ -19,6 +19,7 @@ import Sidebar, { TopNavbar } from "../Layout/Sidebar";
 import { PasswordVisibilityAdornment } from "../Auth/PasswordInput";
 import authAPI from "../../services/authAPI";
 import kycAPI from "../../services/kycAPI";
+import KycVerificationPanel from "./KycVerificationPanel";
 import { logout, saveUser } from "../../utils/auth";
 
 export default function Settings() {
@@ -38,11 +39,6 @@ export default function Settings() {
   const [passwordMsg, setPasswordMsg] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [savingPassword, setSavingPassword] = useState(false);
-
-  const [kycFile, setKycFile] = useState(null);
-  const [kycMsg, setKycMsg] = useState("");
-  const [kycError, setKycError] = useState("");
-  const [uploadingKyc, setUploadingKyc] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -97,30 +93,10 @@ export default function Settings() {
     }
   };
 
-  const handleKycUpload = async (e) => {
-    e.preventDefault();
-    setKycMsg("");
-    setKycError("");
-
-    if (!kycFile) {
-      setKycError("Please select a file to upload");
-      return;
-    }
-
-    try {
-      setUploadingKyc(true);
-      const formData = new FormData();
-      formData.append("idDocument", kycFile);
-      await kycAPI.uploadKYC(formData);
-      setKycMsg("Document uploaded. Verification takes a few seconds.");
-      setKycFile(null);
-      const kycRes = await kycAPI.getKYCStatus();
-      setKyc(kycRes.data);
-    } catch (err) {
-      setKycError(err.message || "KYC upload failed");
-    } finally {
-      setUploadingKyc(false);
-    }
+  const refreshKyc = async () => {
+    const kycRes = await kycAPI.getKYCStatus();
+    setKyc(kycRes.data);
+    return kycRes.data;
   };
 
   const handleLogout = () => {
@@ -173,51 +149,7 @@ export default function Settings() {
               </Box>
             </Paper>
 
-            <Paper sx={{ p: { xs: 2, sm: 3 } }}>
-              <Typography variant="h6" sx={{ mb: 1 }}>KYC Verification</Typography>
-              <Divider sx={{ mb: 2 }} />
-              <Typography variant="body2" sx={{ mb: 2 }}>
-                Status:
-                {kyc?.verified
-                  ? " Verified \u2705"
-                  : kyc?.submissions?.length
-                    ? " Pending review \u23F3"
-                    : " Not submitted \u26D4"}
-              </Typography>
-
-              {(kyc?.submissions?.length > 0) && (
-                <Box sx={{ mb: 2 }}>
-                  {kyc.submissions.map((s) => (
-                    <Typography key={s.id} variant="caption" display="block" color="text.secondary">
-                      {s.originalName} — {s.status}
-                      {s.verifiedAt ? ` on ${new Date(s.verifiedAt).toLocaleDateString()}` : ""}
-                    </Typography>
-                  ))}
-                </Box>
-              )}
-
-              {!kyc?.verified && (
-                <form onSubmit={handleKycUpload}>
-                  <TextField
-                    type="file"
-                    inputProps={{ accept: "image/*,.pdf" }}
-                    onChange={(e) => setKycFile(e.target.files?.[0] || null)}
-                    fullWidth
-                    sx={{ mb: 1 }}
-                    helperText={kycFile ? kycFile.name : "Upload a government-issued ID (max 5MB)"}
-                  />
-                  {kycError && <Alert severity="error" sx={{ mb: 1 }}>{kycError}</Alert>}
-                  {kycMsg && <Alert severity="success" sx={{ mb: 1 }}>{kycMsg}</Alert>}
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    disabled={uploadingKyc || !kycFile}
-                  >
-                    {uploadingKyc ? "Uploading..." : "Upload ID"}
-                  </Button>
-                </form>
-              )}
-            </Paper>
+            <KycVerificationPanel kyc={kyc} onRefresh={refreshKyc} />
 
             <Paper sx={{ p: { xs: 2, sm: 3 } }}>
               <Typography variant="h6" sx={{ mb: 2 }}>Change Password</Typography>

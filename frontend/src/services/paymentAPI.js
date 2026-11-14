@@ -20,6 +20,24 @@ export const payMerchant = async ({ amount, merchant, payment_method = 'mobile_m
   return response.data;
 };
 
+export const payWithQR = async ({
+  amount,
+  qrPayload,
+  merchantCode,
+  payment_method = 'mobile_money',
+  note = ''
+}) => {
+  const response = await api.post('/payments/qr', {
+    amount,
+    currency: 'XAF',
+    payment_method,
+    qrPayload,
+    merchantCode,
+    note
+  });
+  return response.data;
+};
+
 export const getPaymentHistory = async () => {
   const response = await api.get('/payments/history');
   return response.data;
@@ -28,5 +46,6 @@ export const getPaymentHistory = async () => {
 export default {
   payBill,
   payMerchant,
+  payWithQR,
   getPaymentHistory
 };

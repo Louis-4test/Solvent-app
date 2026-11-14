@@ -39,9 +39,21 @@ const authLimiter = rateLimit({
 app.use(['/api/auth/login', '/api/auth/register', '/api/auth/verify-login-mfa', '/api/auth/forgot-password'], authLimiter);
 
 // Middleware
+const defaultOrigins = ['http://localhost:5173', 'http://127.0.0.1:5173'];
+const allowedOrigins = (process.env.FRONTEND_URL || defaultOrigins.join(','))
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error('Origin not allowed by CORS'));
+  },
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
@@ -99,7 +111,8 @@ app.get('/api-docs', (req, res) => {
       },
       kyc: {
         upload: 'POST /api/kyc/upload',
-        status: 'GET /api/kyc/status'
+        status: 'GET /api/kyc/status',
+        document: 'GET /api/kyc/submissions/:id/document/:side'
       },
       transactions: {
         transfer: 'POST /api/transactions/transfer',
@@ -107,9 +120,29 @@ app.get('/api-docs', (req, res) => {
       },
       payments: {
         initiate: 'POST /api/payments',
-        history: 'GET /api/payments/history'
+        qr: 'POST /api/payments/qr',
+        history: 'GET /api/payments/history',
+        search: 'GET /api/payments/search'
       },
-      notifications: 'GET /api/notifications'
+      merchants: {
+        list: 'GET /api/merchants',
+        detail: 'GET /api/merchants/:code'
+      },
+      receipts: {
+        list: 'GET /api/receipts',
+        detail: 'GET /api/receipts/:reference'
+      },
+      notifications: 'GET /api/notifications',
+      admin: {
+        dashboard: 'GET /api/admin/dashboard',
+        users: 'GET /api/admin/users',
+        updateUser: 'PATCH /api/admin/users/:id',
+        transactions: 'GET /api/admin/transactions',
+        updateTransactionStatus: 'PATCH /api/admin/transactions/:id/status',
+        payments: 'GET /api/admin/payments',
+        kyc: 'GET /api/admin/kyc',
+        reviewKYC: 'PATCH /api/admin/kyc/:id'
+      }
     }
   });
 });

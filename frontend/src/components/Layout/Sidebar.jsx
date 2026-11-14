@@ -21,6 +21,13 @@ const LogoutIcon = () => (
   </svg>
 );
 
+const AdminIcon = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M12 3l7 3v5.2c0 4.4-2.9 7.5-7 9.3-4.1-1.8-7-4.9-7-9.3V6l7-3z" />
+    <path d="M9 12l2 2 4-4" />
+  </svg>
+);
+
 const NAV_LINKS = [
   {
     to: "/",
@@ -32,6 +39,12 @@ const NAV_LINKS = [
     to: "/transactions",
     label: "Transactions",
     icon: "/point_of_sale_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.png"
+  },
+  {
+    to: "/receipts",
+    label: "Receipts",
+    icon: "/shop_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.png",
+    startsWith: "/receipts"
   },
   {
     to: "/transfer/bank-to-momo",
@@ -53,6 +66,12 @@ const NAV_LINKS = [
     to: "/notifications",
     label: "Notifications",
     icon: "/notifications_24dp_1F1F1F_FILL0_wght400_GRAD0_opsz24.png"
+  },
+  {
+    to: "/admin",
+    label: "Admin",
+    icon: AdminIcon,
+    adminOnly: true
   },
   {
     to: "/settings",
@@ -135,8 +154,9 @@ const Sidebar = () => {
         </Link>
 
         <nav className="sidebar-nav" aria-label="Main navigation">
-          {NAV_LINKS.map(({ to, label, icon, ...rest }) => {
+          {NAV_LINKS.filter(({ adminOnly }) => !adminOnly || user?.isAdmin).map(({ to, label, icon, ...rest }) => {
             const active = isActive({ to, ...rest });
+            const Icon = icon;
             return (
               <Link
                 key={to}
@@ -146,7 +166,11 @@ const Sidebar = () => {
                 onClick={() => setMobileOpen(false)}
               >
                 <span className="nav-icon">
-                  <img src={icon} alt="" aria-hidden="true" />
+                  {typeof Icon === "string" ? (
+                    <img src={Icon} alt="" aria-hidden="true" />
+                  ) : (
+                    <Icon />
+                  )}
                 </span>
                 <span className="nav-label">{label}</span>
               </Link>

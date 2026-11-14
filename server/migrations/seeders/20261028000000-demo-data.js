@@ -1,5 +1,41 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import sequelize from '../../config/db.js';
-import { Notification, Payment, Transaction, User } from '../../models/index.js';
+import { KYC, Merchant, Notification, Payment, Transaction, User } from '../../models/index.js';
+
+const DEMO_KYC_DIR = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '../../uploads/kyc'
+);
+
+const DEMO_DOCUMENTS = {
+  'demo-front.svg': `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400" viewBox="0 0 640 400" role="img" aria-label="Demo identity document">
+    <rect width="640" height="400" rx="20" fill="#eef4ff"/>
+    <rect x="30" y="30" width="580" height="340" rx="14" fill="#ffffff" stroke="#1a73e8" stroke-width="4"/>
+    <text x="320" y="150" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" font-weight="700" fill="#1a73e8">SOLVENT DEMO ID</text>
+    <text x="320" y="205" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" fill="#334155">Sample National Identity Card</text>
+    <text x="320" y="255" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#64748b">For interface preview only · Not a real document</text>
+  </svg>`,
+  'demo-selfie.svg': `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400" role="img" aria-label="Demo selfie">
+    <rect width="400" height="400" rx="24" fill="#eef4ff"/>
+    <circle cx="200" cy="155" r="70" fill="#cbd5e1"/>
+    <path d="M80 350c0-72 54-130 120-130s120 58 120 130" fill="#cbd5e1"/>
+    <text x="200" y="378" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#64748b">Solvent demo selfie</text>
+  </svg>`
+};
+
+const ensureDemoKycDocuments = () => {
+  fs.mkdirSync(DEMO_KYC_DIR, { recursive: true });
+
+  for (const [filename, contents] of Object.entries(DEMO_DOCUMENTS)) {
+    const filePath = path.join(DEMO_KYC_DIR, filename);
+
+    if (!fs.existsSync(filePath)) {
+      fs.writeFileSync(filePath, contents);
+    }
+  }
+};
 
 if (process.env.NODE_ENV === 'production') {
   throw new Error('Demo seed data must not be loaded in production.');
@@ -29,11 +65,20 @@ const demoUsers = [
     password: 'DemoPass123!',
     isVerified: true,
     isAdmin: false
+  },
+  {
+    fullName: 'Admin Demo',
+    email: 'admin.demo@example.test',
+    phone: '+237600000104',
+    password: 'DemoPass123!',
+    isVerified: true,
+    isAdmin: true
   }
 ];
 
 try {
   await sequelize.authenticate();
+  ensureDemoKycDocuments();
 
   await sequelize.transaction(async (transaction) => {
     const users = [];
@@ -46,6 +91,69 @@ try {
       });
       users.push(user);
     }
+
+    const demoMerchants = [
+      {
+        code: 'MRC-SOLVENT-MARKET',
+        name: 'Solvent Market',
+        category: 'Retail',
+        city: 'Douala',
+        description: 'Everyday groceries and household goods'
+      },
+      {
+        code: 'MRC-BLUE-CAFE',
+        name: 'Blue Cafe',
+        category: 'Food & drink',
+        city: 'Douala',
+        description: 'Coffee, pastries, and quick lunches'
+      },
+      {
+        code: 'MRC-CITY-PHARMACY',
+        name: 'City Pharmacy',
+        category: 'Health',
+        city: 'Yaounde',
+        description: 'Prescriptions and wellness products'
+      },
+      {
+        code: 'MRC-ENERGY-HUB',
+        name: 'Energy Hub',
+        category: 'Utilities',
+        city: 'Douala',
+        description: 'Electricity and airtime top-ups'
+      }
+    ];
+
+    for (const values of demoMerchants) {
+      await Merchant.findOrCreate({
+        where: { code: values.code },
+        defaults: values,
+        transaction
+      });
+    }
+
+    const [demoKyc] = await KYC.findOrCreate({
+      where: { user_id: users[1].id, document_number: 'DEMO-KYC-0001' },
+      defaults: {
+        user_id: users[1].id,
+        document_type: 'national_id',
+        document_number: 'DEMO-KYC-0001',
+        document_front_url: '/uploads/kyc/demo-front.svg',
+        selfie_url: '/uploads/kyc/demo-selfie.svg',
+        status: 'approved',
+        verified_at: new Date()
+      },
+      transaction
+    });
+
+    await demoKyc.update({
+      document_front_url: '/uploads/kyc/demo-front.svg',
+      selfie_url: '/uploads/kyc/demo-selfie.svg'
+    }, { transaction });
+
+    await users[1].update(
+      { kycVerified: true, kycVerifiedAt: new Date() },
+      { transaction }
+    );
 
     const [firstTransfer] = await Transaction.findOrCreate({
       where: { reference: 'DEMO-TRANSFER-0001' },
@@ -111,6 +219,8 @@ try {
     }
 
     console.log(`Seeded demo data. Login email: ${demoUsers[0].email}`);
+    console.log('Admin demo login: admin.demo@example.test');
+    console.log('Demo merchant QR codes: MRC-SOLVENT-MARKET, MRC-BLUE-CAFE');
     console.log('Demo password for all accounts: DemoPass123!');
     console.log(`Example transfer reference: ${firstTransfer.reference}`);
   });

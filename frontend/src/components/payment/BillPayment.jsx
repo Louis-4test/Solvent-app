@@ -6,6 +6,12 @@ import "./BillPayment.css";
 
 const SERVICES = ["Electricity", "Water", "Airtime", "Internet", "TV"];
 
+const formatReceiptAmount = (receipt) =>
+  `${receipt.currency || "XAF"} ${Number(receipt.amount || 0).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}`;
+
 const BillPayment = () => {
   const navigate = useNavigate();
   const [service, setService] = useState(SERVICES[0]);
@@ -14,11 +20,13 @@ const BillPayment = () => {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [receipt, setReceipt] = useState(null);
 
   const handlePay = async (e) => {
     e.preventDefault();
     setError("");
     setMessage("");
+    setReceipt(null);
 
     if (!amount || Number(amount) <= 0) {
       setError("Please enter a valid amount.");
@@ -33,6 +41,7 @@ const BillPayment = () => {
       setLoading(true);
       const res = await payBill({ amount, service, accountNumber });
       setMessage(res.message || "Payment completed successfully.");
+      setReceipt(res.data?.receipt || null);
       setAmount("");
       setAccountNumber("");
     } catch (err) {
@@ -88,6 +97,17 @@ const BillPayment = () => {
 
             {error && <p className="form-error" role="alert">{error}</p>}
             {message && <p className="form-success" role="status">{message}</p>}
+
+            {receipt && (
+              <div className="payment-receipt-success">
+                <div>
+                  <span>Payment successful</span>
+                  <strong>{formatReceiptAmount(receipt)}</strong>
+                  <small>Reference {receipt.reference}</small>
+                </div>
+                <Link to={`/receipts/${encodeURIComponent(receipt.reference)}`}>View receipt</Link>
+              </div>
+            )}
 
             <div className="form-actions">
               <button type="button" className="back-btn" onClick={() => navigate("/")}>{"< Back"}</button>

@@ -51,9 +51,18 @@ const User = sequelize.define('User', {
     type: DataTypes.BOOLEAN,
     defaultValue: false
   },
+  kycVerifiedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
   isAdmin: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
+  },
+  isActive: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true
   },
   resetPasswordToken: {
     type: DataTypes.STRING,

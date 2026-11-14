@@ -309,3 +309,12 @@
   color: #6b7280;
   background: #f1f5f9;
 }
+
+.transaction-receipt-link {
+  color: #1a73e8;
+  text-decoration: none;
+}
+
+.transaction-receipt-link:hover {
+  text-decoration: underline;
+}

@@ -1,6 +1,14 @@
-// server/models/KYC.js
 import { DataTypes } from 'sequelize';
 import sequelize from '../config/db.js';
+
+export const KYC_DOCUMENT_TYPES = [
+  'national_id',
+  'passport',
+  'drivers_license',
+  'voters_card'
+];
+
+export const KYC_STATUSES = ['pending', 'under_review', 'approved', 'rejected'];
 
 const KYC = sequelize.define('KYC', {
   id: {
@@ -12,52 +20,46 @@ const KYC = sequelize.define('KYC', {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
-      model: 'Users',
+      model: 'users',
       key: 'id'
-    }
+    },
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
   },
   document_type: {
-    type: DataTypes.ENUM(
-      'national_id',
-      'passport',
-      'drivers_license',
-      'voters_card'
-    ),
+    type: DataTypes.ENUM(...KYC_DOCUMENT_TYPES),
     allowNull: false
   },
   document_number: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    unique: true
+    type: DataTypes.STRING(80),
+    allowNull: false
   },
   document_front_url: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(500),
     allowNull: false
   },
   document_back_url: {
-    type: DataTypes.STRING,
-    allowNull: true 
+    type: DataTypes.STRING(500),
+    allowNull: true
   },
   selfie_url: {
-    type: DataTypes.STRING,
-    allowNull: false
+    type: DataTypes.STRING(500),
+    allowNull: true
   },
   status: {
-    type: DataTypes.ENUM(
-      'pending',
-      'under_review',
-      'approved',
-      'rejected'
-    ),
+    type: DataTypes.ENUM(...KYC_STATUSES),
+    allowNull: false,
     defaultValue: 'pending'
   },
   reviewed_by: {
     type: DataTypes.INTEGER,
     allowNull: true,
     references: {
-      model: 'Users',
+      model: 'users',
       key: 'id'
-    }
+    },
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE'
   },
   rejection_reason: {
     type: DataTypes.TEXT,
@@ -74,13 +76,15 @@ const KYC = sequelize.define('KYC', {
   updatedAt: 'updated_at',
   indexes: [
     {
-      unique: true,
-      fields: ['document_number']
+      name: 'kyc_user_document_index',
+      fields: ['user_id', 'document_number']
     },
     {
+      name: 'kyc_user_id_index',
       fields: ['user_id']
     },
     {
+      name: 'kyc_status_index',
       fields: ['status']
     }
   ]

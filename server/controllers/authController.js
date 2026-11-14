@@ -75,13 +75,12 @@ export const register = async (req, res) => {
       });
     }
 
-    // Create user
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Create user. The User model's beforeCreate hook hashes the password.
     const user = await User.create({
       fullName,
       email,
       phone,
-      password: hashedPassword,
+      password,
       isVerified: process.env.NODE_ENV === 'development',
     });
 
@@ -124,7 +123,9 @@ export const register = async (req, res) => {
         email: user.email,
         fullName: user.fullName,
         avatarUrl: user.avatarUrl || null,
-        isVerified: user.isVerified
+        isVerified: user.isVerified,
+        isAdmin: user.isAdmin === true,
+        isActive: user.isActive !== false
       }
     });
 
@@ -159,8 +160,11 @@ const publicUser = (user) => ({
   phone: user.phone,
   avatarUrl: user.avatarUrl || null,
   isVerified: user.isVerified,
+  isAdmin: user.isAdmin === true,
+  isActive: user.isActive !== false,
   mfaEnabled: user.mfaEnabled,
   kycVerified: user.kycVerified,
+  kycVerifiedAt: user.kycVerifiedAt,
   createdAt: user.createdAt,
   updatedAt: user.updatedAt
 });
@@ -490,6 +494,14 @@ export const login = async (req, res) => {
       });
     }
 
+    if (user.isActive === false) {
+      return res.status(403).json({
+        success: false,
+        error: 'This account has been suspended. Please contact support.',
+        code: 'ACCOUNT_SUSPENDED'
+      });
+    }
+
     // Account verification check
     if (!user.isVerified) {
       return res.status(403).json({ 
@@ -542,8 +554,11 @@ export const login = async (req, res) => {
         fullName: user.fullName,
         avatarUrl: user.avatarUrl || null,
         isVerified: user.isVerified,
+        isAdmin: user.isAdmin === true,
+        isActive: user.isActive !== false,
         mfaEnabled: user.mfaEnabled,
-        kycVerified: user.kycVerified
+        kycVerified: user.kycVerified,
+        kycVerifiedAt: user.kycVerifiedAt
       }
     });
 
@@ -583,6 +598,14 @@ export const verifyLoginMFA = async (req, res) => {
       });
     }
 
+    if (user.isActive === false) {
+      return res.status(403).json({
+        success: false,
+        error: 'This account has been suspended. Please contact support.',
+        code: 'ACCOUNT_SUSPENDED'
+      });
+    }
+
     // Verify MFA code
     if (!user.mfaCode || user.mfaCode !== code) {
       return res.status(400).json({ 
@@ -618,7 +641,10 @@ export const verifyLoginMFA = async (req, res) => {
         fullName: user.fullName,
         avatarUrl: user.avatarUrl || null,
         mfaEnabled: user.mfaEnabled,
-        kycVerified: user.kycVerified
+        isAdmin: user.isAdmin === true,
+        isActive: user.isActive !== false,
+        kycVerified: user.kycVerified,
+        kycVerifiedAt: user.kycVerifiedAt
       }
     });
 
@@ -716,6 +742,14 @@ export const verifyMFA = async (req, res) => {
       });
     }
 
+    if (user.isActive === false) {
+      return res.status(403).json({
+        success: false,
+        error: 'This account has been suspended. Please contact support.',
+        code: 'ACCOUNT_SUSPENDED'
+      });
+    }
+
     // Verify MFA code
     if (!user.mfaCode || user.mfaCode !== code) {
       return res.status(400).json({ 
@@ -754,7 +788,10 @@ export const verifyMFA = async (req, res) => {
         avatarUrl: user.avatarUrl || null,
         isVerified: true,
         mfaEnabled: true,
-        kycVerified: user.kycVerified
+        isAdmin: user.isAdmin === true,
+        isActive: user.isActive !== false,
+        kycVerified: user.kycVerified,
+        kycVerifiedAt: user.kycVerifiedAt
       }
     });
   } catch (error) {
